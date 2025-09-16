@@ -1,0 +1,10 @@
+# === Archivos sensibles ===
+.env
+.env.local
+
+# === Dependencias pesadas ===
+node_modules/
+
+# === Builds de React ===
+fronttiendaPro/build/
+fronttiendaadminPro/build/

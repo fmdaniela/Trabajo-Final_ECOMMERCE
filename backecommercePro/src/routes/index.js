@@ -2,12 +2,12 @@ import { Router } from 'express';
 
 import rolesRoutes from './roles.Routes.js';
 import categoriasRoutes from './categorias.Routes.js';
-import administradoresRoutes from './administradores.Routes.js';
+import administradoresRoutes from './administradores.Routes.js'; // CRUD de administradores
 
 
-import usuariosRoutes from './usuarios.Routes.js';
+import authRoutes from './auth.Routes.js';  // login, register, refreshToken
+import usuariosRoutes from './usuarios.Routes.js'; // CRUD de usuarios
 import productosRoutes from './productos.Routes.js';
-import authRoutes from './auth.Routes.js';
 
 
 import telefonosRoutes from './telefonosRoutes.js';
@@ -38,9 +38,9 @@ router.use('/roles', rolesRoutes);
 router.use('/categorias', categoriasRoutes);
 router.use('/administradores', administradoresRoutes);
 
+router.use('/auth', authRoutes); 
 router.use('/usuarios', usuariosRoutes);
 router.use('/productos', productosRoutes);
-router.use('/auth', authRoutes); 
 
 
 router.use('/telefonos', telefonosRoutes); // monta las rutas definidas en router. va en plural

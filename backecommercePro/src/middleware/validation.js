@@ -43,32 +43,16 @@ export const validateUsuarioUpdate = [
     .isInt({ min: 1 }).withMessage('El rol debe ser un número entero positivo')
 ];
 
-// ===== Validaciones para registro/login de Administrador =====
-export const validateAdminRegister = [
-  body('nombre')
-    .notEmpty().withMessage('El nombre es requerido')
-    .isLength({ min: 2, max: 50 }).withMessage('El nombre debe tener entre 2 y 50 caracteres'),
-  body('apellido')
-    .notEmpty().withMessage('El apellido es requerido')
-    .isLength({ min: 2, max: 50 }).withMessage('El apellido debe tener entre 2 y 50 caracteres'),
-  body('email')
-    .isEmail().withMessage('Debe ser un email válido')
-    .normalizeEmail(),
-  body('password')
-    .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-  body('idRol')
-    .isInt({ min: 1 }).withMessage('El rol debe ser un número entero positivo')
-];
-
+// ===== Validaciones para login de Administrador =====
 export const validateAdminLogin = [
   body('email').isEmail().withMessage('Debe ser un email válido'),
   body('password').notEmpty().withMessage('La contraseña es requerida')
 ];
 
 // ===== Validación de ID para rutas =====
-export const validateIdParam = [
-  param('id').isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo')
-];
+// export const validateIdParam = [
+//   param('id').isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo')
+// ];
 
 // ===== Validación de paginación (opcional) =====
 export const validatePagination = [
@@ -165,3 +149,17 @@ export const handleValidationErrors = (req, res, next) => {
     }
     next();
 };
+
+// ===== Validación genérica de parámetros ID =====
+
+// export const validateIdParam = (paramName) => [
+//   param(paramName)
+//     .isInt({ min: 1 })
+//     .withMessage(`El ${paramName} debe ser un número entero positivo`)
+// ];
+
+export const validateIdParam = (paramName) => [
+  param(paramName).isInt({ min: 1 }).withMessage(`El ${paramName} debe ser un número entero positivo`)
+];
+
+

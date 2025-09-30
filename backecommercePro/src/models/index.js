@@ -71,7 +71,7 @@ Producto.belongsTo(Administrador, { foreignKey: 'idAdministrador' });
 
 // Categoria 1:N Producto
 Categoria.hasMany(Producto, { foreignKey: 'idCategoria' });
-Producto.belongsTo(Categoria, { foreignKey: 'idCategoria' });
+Producto.belongsTo(Categoria, { foreignKey: 'idCategoria', as: 'categoria' });
 
 // Producto 1:N VarianteProducto 
 Producto.hasMany(VarianteProducto, { foreignKey: 'idProducto', as: 'variantes'});
@@ -108,21 +108,21 @@ OrdenCompra.belongsTo(Direccion, { foreignKey: 'idDireccion' });
 
 // OrdenCompra N:M Producto
 // OrdenCompra: DetalleOrden
-OrdenCompra.hasMany(DetalleOrden, { foreignKey: 'idOrdenCompra' });
+OrdenCompra.hasMany(DetalleOrden, { foreignKey: 'idOrdenCompra', as: 'items' });
 DetalleOrden.belongsTo(OrdenCompra, { foreignKey: 'idOrdenCompra' });
 
 // Producto: DetalleOrden
-Producto.hasMany(DetalleOrden, { foreignKey: 'idProducto' });
+Producto.hasMany(DetalleOrden, { foreignKey: 'idProducto', as: 'ordenItems' });
 DetalleOrden.belongsTo(Producto, { foreignKey: 'idProducto' });
 
 
 // Carrito N:M Producto
 //Carrito: DetalleCarrito
-Carrito.hasMany(DetalleCarrito, { foreignKey: 'idCarrito' });
+Carrito.hasMany(DetalleCarrito, { foreignKey: 'idCarrito', as: 'items' });
 DetalleCarrito.belongsTo(Carrito, { foreignKey: 'idCarrito' });
 
 //Producto: DetalleCarrito
-Producto.hasMany(DetalleCarrito, { foreignKey: 'idProducto' });
+Producto.hasMany(DetalleCarrito, { foreignKey: 'idProducto', as: 'carritoItems' });
 DetalleCarrito.belongsTo(Producto, { foreignKey: 'idProducto' });
 //No hay que usar belongsToMany() porque necesitamos almacenar más información que solo las FK.
 

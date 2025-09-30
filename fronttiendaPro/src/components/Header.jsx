@@ -2,13 +2,18 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCartIcon, UserIcon } from '@heroicons/react/24/solid';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import useAuth from "../hooks/useAuth";
+import { useAuth } from "../context/AuthContext";
+import { useCarrito } from "../context/CarritoContext";
+import { useNavigate } from "react-router-dom";
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
   const { usuario, logout } = useAuth();
+  const { cantidadTotal } = useCarrito();
+  const navigate = useNavigate();
+  
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -21,6 +26,7 @@ function Header() {
 
   const handleLogoutConfirm = () => {
     logout();
+    navigate("/"); 
     setShowLogoutModal(false);
     setMenuOpen(false);
   };
@@ -51,10 +57,14 @@ function Header() {
 
         {/* Icons + menú hamburguesa */}
         <div className="flex items-center space-x-4">
-          <div className="relative cursor-pointer">
-            <ShoppingCartIcon className="w-6 h-6 text-white hover:text-gray-200" />
-            <span className="absolute -top-2 -right-2 bg-fuchsia-800 text-white text-xs rounded-full px-1">3</span>
-          </div>
+          <Link to="/carrito" className="relative cursor-pointer">
+           <ShoppingCartIcon className="w-6 h-6 text-white hover:text-gray-200" />
+           {/* {cantidadTotal > 0 && ( */} 
+             <span className="absolute -top-2 -right-2 bg-fuchsia-800 text-white text-xs rounded-full px-1">
+               {cantidadTotal}
+             </span>
+           {/* )} */}
+         </Link>
 
           {/* Usuario logueado - desktop */}
           {usuario ? (

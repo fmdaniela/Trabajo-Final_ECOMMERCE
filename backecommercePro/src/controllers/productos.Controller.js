@@ -1,4 +1,5 @@
-import { Producto, Categoria } from '../models/index.js';
+import { Producto, Categoria, VarianteProducto, ImagenProducto, Resena } from '../models/index.js';
+import { Op } from "sequelize";
 
 // ===== Obtener todos los productos =====
 export const getProductos = async (req, res) => {
@@ -10,7 +11,6 @@ export const getProductos = async (req, res) => {
     if (categoriaId) whereClause.categoriaId = categoriaId;
 
     const productos = await Producto.findAndCountAll({
-      where: whereClause,
       include: [{
         model: Categoria,
         as: 'categoria',
@@ -18,7 +18,7 @@ export const getProductos = async (req, res) => {
       }],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['createdAt', 'DESC']]
+      order: [['fechaCreacion', 'DESC']]
     });
 
     res.json({
@@ -40,7 +40,7 @@ export const getProductos = async (req, res) => {
   }
 };
 
-// ===== Obtener un producto por ID =====
+//===== Obtener un producto por ID =====
 export const getProductoById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -63,6 +63,7 @@ export const getProductoById = async (req, res) => {
     });
   }
 };
+
 
 // ===== Crear un producto =====
 export const createProducto = async (req, res) => {
@@ -117,6 +118,22 @@ export const updateProducto = async (req, res) => {
   }
 };
 
+// // Eliminar un producto
+// export const deleteProducto = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const resultado = await Producto.destroy({ where: { id } });
+//     if (resultado > 0) {
+//       res.status(200).json({ message: 'Producto eliminado correctamente' });
+//     } else {
+//       res.status(404).json({ message: 'Producto no encontrado para eliminar' });
+//     }
+//   } catch (error) {
+//     console.error('Error al eliminar producto:', error);
+//     res.status(500).json({ message: 'Error al eliminar producto', error: error.message });
+//   }
+// };
+
 // ===== Eliminar un producto (soft delete) =====
 export const deleteProducto = async (req, res) => {
   try {
@@ -135,3 +152,69 @@ export const deleteProducto = async (req, res) => {
     });
   }
 };
+
+
+
+// Obtener productos relacionados
+export const obtenerProductosRelacionados = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const productoActual = await Producto.findByPk(id);
+    if (!productoActual) {
+      return res.status(404).json({ message: 'Producto no encontrado' });
+    }
+
+    const productosRelacionados = await Producto.findAll({
+      where: {
+        idCategoria: productoActual.idCategoria,
+        id: { [Op.ne]: id }, // excluye el producto actual
+      },
+      limit: 3,
+      include: [{ model: Categoria, as: "categoria"}],
+    });
+
+    res.status(200).json(productosRelacionados);
+  } catch (error) {
+    console.error('Error al obtener productos relacionados', error);
+    res.status(500).json({message: 'Error al obtener productos relacionados', error: error.message});
+  }
+};
+
+//Obtener Resenas por producto
+export const obtenerResenasPorProducto = async (req, res) => {
+  try {
+    const { idProducto } = req.params;
+    const resenas = await Resena.findAll({
+      where: { idProducto },
+      order: [['fechaResena', 'DESC']],
+    });
+    res.status(200).json(resenas);
+  } catch (error) {
+    console.error('Error al obtener reseñas del producto', error);
+    res.status(500).json({ message: 'Error al obtener reseñas del producto', error: error.message });
+  }
+};
+
+//Crear una nueva Resena
+export const crearResenaPorProducto = async (req, res) => {
+  try {
+    console.log("📩 Body recibido:", req.body);
+    console.log("🛒 Params:", req.params);
+    const { idProducto }= req.params; // aqui obtenemos el idProducto desde la URL con req.params
+    const { calificacion, comentario, idUsuario } = req.body;
+    const nuevaResena = await Resena.create({
+      idProducto, // declaramos el idProducto más allá q lo obtenemos de la URL(req.params) xq estamos creando una reseña nueva y Sequelize necesita saber qué idProducto asociar a esa reseña. Pero este atributo no se incluye en el JSON del body para hacer POST xq ya lo estamos extrayendo de req.params
+      calificacion,
+      comentario,
+      idUsuario,
+    });
+
+    console.log("✅ Respuesta a enviar:", nuevaResena);
+    res.status(201).json(nuevaResena);
+  } catch (error) {
+    console.log('Error al crear reseña', error);
+    res.status(500).json({ message: 'Error al crear reseña', error: error.message});
+  }
+}
+

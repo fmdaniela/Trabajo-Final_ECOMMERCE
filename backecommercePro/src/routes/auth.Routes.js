@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import passport from '../config/passport.js';
-import jwt from 'jsonwebtoken';
 import {
   registerUsuario,
   loginUsuario,
   loginAdmin,
   refreshToken,
-} from '../controllers/Auth.Controller.js';
+  } from '../controllers/Auth.Controller.js';
+
+import { loginSocial } from '../controllers/Auth.Controller.js';
 
 import { protect, authorize } from '../middleware/auth.middleware.js';
 import {
@@ -20,7 +20,7 @@ const router = Router();
 
 // ================= AUTENTICACIÓN LOCAL =================
 
-// Registro y Login
+// Registro y Login Usuario
 router.post('/registerUsuario', validateUsuarioCreate, handleValidationErrors, registerUsuario);
 router.post('/loginUsuario', validateUsuarioLogin, handleValidationErrors, loginUsuario);
 
@@ -31,86 +31,7 @@ router.post('/loginAdmin', validateAdminLogin, handleValidationErrors, loginAdmi
 router.post('/refresh-token', refreshToken);
 
 /// ================= GOOGLE OAUTH =================
-router.get('/google',
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'] 
-  })
-);
-
-router.get('/google/callback',
-  (req, res, next) => {
-    passport.authenticate('google', { session: false }, (err, user, info) => {
-      if (err) {
-        return res.status(500).json({ 
-          success: false, 
-          message: 'Error en autenticación Google' 
-        });
-      }
-      if (!user) {
-        return res.status(401).json({ 
-          success: false, 
-          message: info?.message || 'Autenticación fallida' 
-        });
-      }
-      req.user = user;
-      next();
-    })(req, res, next);
-  },
-  (req, res) => {
-    try {
-      // Generar tokens
-      const accessToken = jwt.sign(
-        { 
-          id: req.user.id, 
-          email: req.user.email,
-          rol: req.user.rol.codigo,
-          tipo: 'USUARIO'
-        }, 
-        process.env.JWT_SECRET,
-        { 
-          expiresIn: '15m' 
-        }
-      );
-
-      const refreshToken = jwt.sign(
-        { 
-          id: req.user.id, 
-          email: req.user.email,
-          rol: req.user.rol.codigo, 
-          tipo: 'USUARIO'
-        },
-        process.env.JWT_REFRESH_SECRET,
-        { 
-          expiresIn: '7d' 
-        }
-      );
-      
-      res.json({
-        success: true,
-        message: 'Autenticación con Google exitosa',
-        data: {
-          accessToken,
-          refreshToken,
-          user: {
-            id: req.user.id,
-            email: req.user.email,
-            nombre: req.user.nombre,
-            apellido: req.user.apellido,
-            rol: req.user.rol.codigo,
-            tipo: 'USUARIO',
-            proveedor: req.user.proveedor
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error generando token JWT:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error interno del servidor' 
-      });
-    }
-  }
-);
+router.post('/loginSocial', loginSocial);
 
 // ================= RUTAS PROTEGIDAS =================
 

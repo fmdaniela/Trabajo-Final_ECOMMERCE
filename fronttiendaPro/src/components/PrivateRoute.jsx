@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import useAuth from "../hooks/useAuth"; // tu custom hook
+import { useAuth } from "../context/AuthContext";
 
 function PrivateRoute({ children }) {
   const { usuario } = useAuth();

@@ -1,7 +1,7 @@
 // src/pages/Perfil.jsx
 import { useState, useEffect } from "react";
 import { UserIcon, EnvelopeIcon, PhoneIcon, CalendarIcon } from "@heroicons/react/24/outline";
-import useAuth from "../hooks/useAuth";
+import { useAuth } from "../context/AuthContext";
 
 const Perfil = () => {
   const { usuario } = useAuth();

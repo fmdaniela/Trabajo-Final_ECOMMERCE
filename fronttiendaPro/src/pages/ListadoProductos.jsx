@@ -34,7 +34,7 @@ function ListadoProductos() {
       <h1 className="text-2xl font-bold text-center mb-6 text-[#E91E63]">Todos nuestros productos</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {productos.map((producto) => (
+        {productos.data?.map((producto) => ( //Acceder al array directamente al map
           <ProductCardFull key={producto.id} producto={producto} />
         ))}
       </div>

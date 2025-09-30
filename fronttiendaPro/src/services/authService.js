@@ -12,17 +12,6 @@ const authService = {
     }
   },
 
-
-  registrarAdmin: async (datos) => {
-    try {
-      const response = await API.post('/auth/registerAdmin', datos);
-      return response.data;
-    } catch (error) {
-      console.error('Error completo:', error);
-      throw error.response?.data?.message || 'Error al registrar administrador';
-    }
-  },
-
   // ===== Login =====
   loginUsuario: async (credenciales) => {
     try {
@@ -42,14 +31,21 @@ const authService = {
     }
   },
 
-  // ===== Refresh Token =====
-  refreshAccessToken: async (token) => {
-    try {
-      const response = await API.post('/auth/refreshToken', { token });
+  // ===== Login Social =====
+  loginSocial: async (datos) => {
+  try {
+      const response = await API.post('/auth/loginSocial', datos);
       return response.data;
     } catch (error) {
-      throw error.response?.data?.message || 'Error al refrescar token';
+      throw error.response?.data?.message || 'Error en login social';
     }
+  },
+
+  // ===== Refresh Token =====
+  refreshAccessToken: async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    const response = await API.post('/auth/refresh-token', { refreshToken });
+    return response.data;
   },
 };
 

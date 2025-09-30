@@ -6,8 +6,6 @@ import dotenv from 'dotenv';
 import sequelize from './src/db/connection.js'; // Conexión a la BD
 import routerPrincipal from './src/routes/index.js'; // Rutas principales
 import { notFound, errorHandler } from './src/middleware/errorHandler.js';
-import passport from './src/config/passport.js';
-import cookieParser from 'cookie-parser';
 
 
 //  1. Cargar variables de entorno
@@ -16,6 +14,7 @@ dotenv.config(); // Lee el archivo .env  //Esto debe ir antes que cualquier uso 
 //  2. Inicialización de la app
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 
 // ============================
 //  3. Middlewares globales
@@ -38,12 +37,6 @@ app.use(morgan(process.env.NODE_ENV === 'development' ? "dev" : "combined")); //
 // Parsing de datos (JSON y URL encoded)
 app.use(express.json({ limit: '10mb' })); // convierte el body a JSON
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Inicializar Passport (SIN sesiones para JWT)
-app.use(passport.initialize());
-
-// Middleware para parsear cookies
-app.use(cookieParser());
 
 
 // 4. Ruta de salud de la API

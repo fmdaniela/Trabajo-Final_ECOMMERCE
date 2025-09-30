@@ -260,17 +260,27 @@ export const getProductosByCategoriaPublic = async (req, res) => {
     const { page = 1, limit = 10, sort = 'id', direction = 'DESC', search } = req.query;
     const offset = (page - 1) * limit;
 
-    if (!id || isNaN(id)) return res.status(400).json({ success: false, error: "ID de categoría inválido" });
+    // Validar ID
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ success: false, error: "ID de categoría inválido" });
+    }
 
-    const categoria = await Categoria.findOne({ where: { id, activa: true } }); // Solo categoría activa
-    if (!categoria) return res.status(404).json({ success: false, error: "Categoría no encontrada o inactiva" });
+    // Buscar categoría activa
+    const categoria = await Categoria.findOne({ where: { id, activa: true } });
+    if (!categoria) {
+      return res.status(404).json({ success: false, error: "Categoría no encontrada o inactiva" });
+    }
 
-    const whereClause = { idCategoria: id, activa: true }; // Solo productos activos
-    if (search) whereClause[Op.or] = [
-      { nombre: { [Op.like]: `%${search}%` } },
-      { descripcion: { [Op.like]: `%${search}%` } }
-    ];
+    // Preparar filtros para productos
+    const whereClause = { idCategoria: id }; // solo filtro por categoría
+    if (search) {
+      whereClause[Op.or] = [
+        { nombre: { [Op.like]: `%${search}%` } },
+        { descripcion: { [Op.like]: `%${search}%` } }
+      ];
+    }
 
+    // Buscar productos
     const productos = await Producto.findAndCountAll({
       where: whereClause,
       limit: parseInt(limit),
@@ -290,7 +300,11 @@ export const getProductosByCategoriaPublic = async (req, res) => {
     });
   } catch (err) {
     console.error("Error en getProductosByCategoriaPublic:", err);
-    res.status(500).json({ success: false, error: "Error interno del servidor", message: "No se pudieron obtener los productos de la categoría" });
+    res.status(500).json({ 
+      success: false, 
+      error: "Error interno del servidor", 
+      message: "No se pudieron obtener los productos de la categoría" 
+    });
   }
 };
 

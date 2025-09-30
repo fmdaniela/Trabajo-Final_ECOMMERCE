@@ -22,6 +22,7 @@ const DetalleOrden = sequelize.define('DetalleOrden', {
   idOrdenCompra: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    unique: true,
     references: {
       model: 'ordenesCompras', 
       key: 'id'
@@ -30,6 +31,7 @@ const DetalleOrden = sequelize.define('DetalleOrden', {
   idProducto: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    unique: true,
     references: {
       model: 'productos', 
       key: 'id'

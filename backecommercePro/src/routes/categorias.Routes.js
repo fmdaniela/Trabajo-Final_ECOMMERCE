@@ -23,8 +23,8 @@ import {
 const router = Router();
 
 // // ================= RUTAS PÚBLICAS =================
-// router.get('/public', getCategoriasPublic);
-// router.get('/public/:id/productos', validateIdParam, handleValidationErrors, getProductosByCategoriaPublic);
+router.get('/public', getCategoriasPublic); //listado de categorías activas.
+router.get('/public/:id/productos', getProductosByCategoriaPublic); //productos activos de esa categoría.
 
 
 // // ================= PROTECCIÓN GENERAL =================
@@ -49,6 +49,9 @@ const router = Router();
 
 // // DELETE /api/categorias/:id - Eliminar (SOLO SUPERADMIN)
 // router.delete('/:id', authorize('SUPERADMIN'), validateIdParam, handleValidationErrors, deleteCategoria);
+
+// Ruta para restaurar categoría (ADMIN y SUPERADMIN)
+// router.put('/:id/restaurar', authorize('ADMIN','SUPERADMIN'), validateIdParam, handleValidationErrors, restoreCategoria);
 
 
 // Después (temporalmente sin autorización):

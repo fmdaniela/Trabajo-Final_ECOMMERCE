@@ -1,6 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../db/connection.js';
 import Rol from './Rol.js';
+import bcrypt from 'bcryptjs';
 
 const Usuario = sequelize.define('Usuario', {
   id: {
@@ -23,7 +24,7 @@ const Usuario = sequelize.define('Usuario', {
   },
   password: {
     type: DataTypes.STRING(100),
-    allowNull: true // ✅ CAMBIADO A true PARA AUTH SOCIAL
+    allowNull: true // ✅ CAMBIADO A true PARA AUTH SOCIAL. (porque algunos entran con Google).
   },
   activo: {
     type: DataTypes.BOOLEAN,
@@ -61,14 +62,14 @@ const Usuario = sequelize.define('Usuario', {
   hooks: {
     beforeCreate: async (usuario) => {
       // ✅ Solo hashear si es usuario LOCAL
-      if (usuario.password && usuario.provider === 'local') {
+      if (usuario.password && usuario.proveedor === 'local') {
         const salt = await bcrypt.genSalt(10);
         usuario.password = await bcrypt.hash(usuario.password, salt);
       }
     },
     beforeUpdate: async (usuario) => {
       // ✅ Solo hashear si es LOCAL y cambió password
-      if (usuario.changed('password') && usuario.provider === 'local') {
+      if (usuario.changed('password') && usuario.proveedor === 'local') {
         const salt = await bcrypt.genSalt(10);
         usuario.password = await bcrypt.hash(usuario.password, salt);
       }
@@ -78,7 +79,7 @@ const Usuario = sequelize.define('Usuario', {
 
 // Método para comparar contraseñas (solo para usuarios locales)
 Usuario.prototype.validPassword = async function(password) {
-  if (!this.password || this.provider !== 'local') return false;
+  if (!this.password || this.proveedor !== 'local') return false;
   return await bcrypt.compare(password, this.password);
 };
 

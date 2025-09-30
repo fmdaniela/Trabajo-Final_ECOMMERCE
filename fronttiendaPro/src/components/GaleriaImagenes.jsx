@@ -75,7 +75,7 @@ function GaleriaImagenes({ idProducto, imagenFallback }) {
         </div>
       )}
 
-      {/* Formulario para agregar imagen */}
+      {/* Formulario para agregar imagen
       <form onSubmit={handleAgregarImagen} className="space-y-2">
         <label className="block text-sm font-medium">Agregar nueva imagen (URL):</label>
         <input
@@ -93,7 +93,7 @@ function GaleriaImagenes({ idProducto, imagenFallback }) {
           {loading ? 'Agregando...' : 'Agregar Imagen'}
         </button>
         {error && <p className="text-red-500 text-sm">{error}</p>}
-      </form>
+      </form> */}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import useCupon from "../hooks/useCupon";
 import { Link } from 'react-router-dom';
+import { useCarrito } from "../context/CarritoContext";
 
 function ProductCardFull({ producto }) {
   const { nombre, imagenUrl, precio, oferta, descuento } = producto;

@@ -22,7 +22,7 @@ const Administrador = sequelize.define('Administrador', {
   },
   password: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false //(siempre logueo local).
   },
   activo: {
     type: DataTypes.BOOLEAN,

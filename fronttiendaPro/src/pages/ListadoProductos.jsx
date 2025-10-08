@@ -28,13 +28,16 @@ function ListadoProductos() {
   if (loading) return <div className="p-4 text-center">Cargando productos...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
+  // 🔹 Filtrar productos activos antes del return
+  const productosActivos = productos.filter(p => p.activo);
+
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
       <CuponForm />
       <h1 className="text-2xl font-bold text-center mb-6 text-[#E91E63]">Todos nuestros productos</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {productos.data?.map((producto) => ( //Acceder al array directamente al map
+        {productosActivos.map((producto) => ( //Acceder al array directamente al map
           <ProductCardFull key={producto.id} producto={producto} />
         ))}
       </div>

@@ -3,31 +3,81 @@ import bcrypt from 'bcryptjs';
 import Usuario from '../models/Usuario.js';
 import Administrador from '../models/Administrador.js';
 import Rol from '../models/Rol.js';
+import transporter from '../config/mailer.js'; // 👈 Importamos el mailer
 
 // ===== REGISTRO PÚBLICO (solo usuarios) =====
 export const registerUsuario = async (req, res) => {
   try {
     const { nombre, apellido, email, password } = req.body;
 
+    // 1️⃣ Crear el usuario
     const nuevoUsuario = await Usuario.create({
       nombre,
       apellido,
       email,
-      password, // Sequelize hook se encarga del hash
+      password, // Sequelize hook hace el hash
       proveedor: 'local',
       idRol: 3, // USER
       activo: true
     });
 
+    // 2️⃣ Enviar mail al admin avisando del nuevo registro
+    await transporter.sendMail({
+      from: `"Vitalia Notificaciones" <${process.env.EMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL,
+      subject: 'Nuevo usuario registrado',
+      text: `Se registró un nuevo usuario:\n\nNombre: ${nombre} ${apellido}\nEmail: ${email}`
+    });
+
+    // 3️⃣ Enviar mail de bienvenida al nuevo usuario
+    await transporter.sendMail({
+      from: `"Tienda Vitalia" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: '¡Bienvenido a nuestra tienda!',
+      text: `Hola ${nombre}, gracias por registrarte en nuestra tienda. ¡Esperamos que disfrutes tu experiencia!`
+    });
+
+    // 4️⃣ Responder al front
     res.status(201).json({
       success: true,
-      message: 'Usuario registrado exitosamente',
+      message: 'Usuario registrado y correos enviados exitosamente',
       data: { id: nuevoUsuario.id, email: nuevoUsuario.email }
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Error en registro', error: err.message });
+    console.error('❌ Error al registrar usuario o enviar correo:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error en registro o envío de correo',
+      error: err.message
+    });
   }
 };
+
+
+// // ===== REGISTRO PÚBLICO (solo usuarios) =====
+// export const registerUsuario = async (req, res) => {
+//   try {
+//     const { nombre, apellido, email, password } = req.body;
+
+//     const nuevoUsuario = await Usuario.create({
+//       nombre,
+//       apellido,
+//       email,
+//       password, // Sequelize hook se encarga del hash
+//       proveedor: 'local',
+//       idRol: 3, // USER
+//       activo: true
+//     });
+
+//     res.status(201).json({
+//       success: true,
+//       message: 'Usuario registrado exitosamente',
+//       data: { id: nuevoUsuario.id, email: nuevoUsuario.email }
+//     });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: 'Error en registro', error: err.message });
+//   }
+// };
 
 // ===== LOGIN USUARIO (clientes - tienda) =====
 export const loginUsuario = async (req, res) => {
@@ -183,8 +233,8 @@ const generateTokens = (entidad, tipo) => {
     tipo
   };
 
-  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '35s' });
+  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '1m' });
 
   return { accessToken, refreshToken };
 };

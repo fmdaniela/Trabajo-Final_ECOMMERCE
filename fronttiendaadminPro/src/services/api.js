@@ -1,69 +1,99 @@
-import axios from 'axios';
+import axios from "axios";
+import useAuthStore from "../store/authStore";
 
-console.log('[API] Inicializando servicio API');
+console.log("[API] Inicializando servicio API");
 
-// Obtener la URL base de la API desde las variables de entorno
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-// Crear instancia de axios con configuración base
 const api = axios.create({
   baseURL: API_URL,
   timeout: 10000,
-  headers: {
-    //'Content-Type': 'application/json',
-  }
 });
 
-// Log para verificar qué URL está siendo utilizada (solo en desarrollo)
 if (import.meta.env.DEV) {
-  console.log('API URL:', API_URL);
+  console.log("[API] URL:", API_URL);
 }
 
-// Interceptor para añadir el token a todas las peticiones
+let isRefreshing = false;
+
+// ===== Interceptor de request =====
 api.interceptors.request.use(
   (config) => {
-    console.log(`[API] Enviando petición ${config.method.toUpperCase()} a ${config.url}`);
-    const startTime = performance.now();
-    config.metadata = { startTime };
-    
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
+    const token = localStorage.getItem("accessToken");
+    if (token) config.headers["Authorization"] = `Bearer ${token}`;
+
+    config.metadata = { startTime: performance.now() };
+    console.log(`[API] → ${config.method.toUpperCase()} ${config.url}`);
     return config;
   },
-  (error) => {
-    console.error('[API] Error en la petición:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Interceptor para manejar respuestas y errores
+// ===== Interceptor de respuesta =====
 api.interceptors.response.use(
   (response) => {
     const { config } = response;
-    if (config.metadata && config.metadata.startTime) {
+    if (config.metadata?.startTime) {
       const duration = performance.now() - config.metadata.startTime;
-      console.log(`[API] Respuesta recibida de ${config.url} en ${duration.toFixed(2)}ms`);
+      console.log(`[API] ✅ Respuesta de ${config.url} en ${duration.toFixed(2)}ms`);
     }
     return response;
   },
-  (error) => {
-    const { config } = error;
-    if (config && config.metadata && config.metadata.startTime) {
-      const duration = performance.now() - config.metadata.startTime;
-      console.log(`[API] Error en petición a ${config.url} después de ${duration.toFixed(2)}ms`);
-      console.log(`[API] Código de error: ${error.response?.status || 'Sin respuesta'}`); 
+  async (error) => {
+    const originalRequest = error.config;
+    const authStore = useAuthStore.getState();
+
+    if (error.response?.status === 401) {
+      // ⚡ Token expirado
+      if (originalRequest._retry || isRefreshing) {
+        console.log("[API] Refresh token ya falló o está en proceso. Logout con toast");
+        authStore.logout(true); // expired = true → toast
+        return Promise.reject(error);
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+      console.log("[API] Token expirado, intentando refrescar...");
+
+      const success = await authStore.refreshAuthToken();
+      isRefreshing = false;
+
+      if (success) {
+        console.log("[API] ✅ Refresh exitoso. Reintentando petición...");
+        const newToken = localStorage.getItem("accessToken");
+        originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } else {
+        console.log("[API] ❌ No se pudo refrescar token. Logout con toast...");
+        authStore.logout(true); // expired = true → toast
+        return Promise.reject(error);
+      }
     }
-    
-    // Si el error es 401 (no autorizado), redirigir al login
-    if (error.response && error.response.status === 401) {
-      console.log('[API] Error 401: No autorizado, redirigiendo a login');
-      localStorage.removeItem('token');
-      //window.location.href = '/login';
-    }
+
     return Promise.reject(error);
   }
 );
 
 export default api;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

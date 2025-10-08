@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Search, Filter, User, RotateCw } from 'lucide-react';
+import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Search, Filter, Users, RotateCw } from 'lucide-react';
 import usuarioService from '../../services/usuarioService';
 
 import * as toast from '../../utils/toast';
@@ -197,7 +197,7 @@ function GestionUsuarios() {
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-50 flex items-center">
-            <User className="mr-2" />
+            <Users className="mr-2" />
             Gestión de Usuarios
           </h1>
           <p className="text-gray-200 mt-1">Administra los clientes de la tienda</p>

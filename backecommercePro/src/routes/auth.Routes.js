@@ -35,12 +35,15 @@ router.post('/loginSocial', loginSocial);
 
 // ================= RUTAS PROTEGIDAS =================
 
+// Perfil de usuario logueado (Tienda)
 router.get('/perfil', protect('USUARIO'), authorize('USER'), (req, res) => {
   res.json({ success: true, data: req.usuario });
 });
 
+// Perfil de administrador logueado (Panel Admin)
 router.get('/dashboard', protect('ADMINISTRADOR'), authorize('ADMIN', 'SUPERADMIN'), (req, res) => {
   res.json({ success: true, data: req.administrador });
+
 });
 
 export default router;

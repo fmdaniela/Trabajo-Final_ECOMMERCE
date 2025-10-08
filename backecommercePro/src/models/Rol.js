@@ -24,7 +24,7 @@ const Rol = sequelize.define('Rol', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false  
-  }
+  }  
 }, {
   tableName: 'roles',
   timestamps: true 

@@ -7,6 +7,7 @@ import administradoresRoutes from './administradores.Routes.js'; // CRUD de admi
 import usuariosRoutes from './usuarios.Routes.js'; // CRUD de usuarios
 import productosRoutes from './productos.Routes.js';
 import carritosRoutes from './carritos.Routes.js';
+import panelAdminRoutes from './panelAdmin.Routes.js'
 
 
 
@@ -41,6 +42,7 @@ router.use('/administradores', administradoresRoutes);
 router.use('/usuarios', usuariosRoutes);
 router.use('/productos', productosRoutes);
 router.use('/carritos', carritosRoutes);
+router.use('/admin', panelAdminRoutes);
 
 
 router.use('/telefonos', telefonosRoutes); // monta las rutas definidas en router. va en plural

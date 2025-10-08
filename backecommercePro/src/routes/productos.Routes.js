@@ -1,82 +1,194 @@
-import { Router } from 'express';
+import { Router } from "express";
 
 // ================= CONTROLADORES =================
 import {
-  getProductos,
-  getProductoById,
+  // 🔹 PRIVADO (ADMIN)
+  adminGetProductos,
+  adminGetProductoById,
   createProducto,
   updateProducto,
-  deleteProducto,
+  adminDeleteProducto,
+  restoreProducto,
+  toggleProductoActivo,
+
+  // 🔹 PÚBLICO (TIENDA)
+  getProductos,
+  getProductoById,
   obtenerProductosRelacionados,
   obtenerResenasPorProducto,
   crearResenaPorProducto,
-} from '../controllers/productos.Controller.js';
+} from "../controllers/productos.Controller.js";
 
-import {
-  obtenerMensajesPorProducto,
-  crearMensajePorProducto,
-} from '../controllers/mensajesController.js';
-
-import { getVariantesPorProducto } from '../controllers/variantesPoductosController.js';
-
+import { getVariantesPorProducto } from "../controllers/variantesPoductosController.js";
 import {
   obtenerEtiquetasPorProducto,
   crearEtiquetaPorProducto,
-} from '../controllers/etiquetasController.js';
+} from "../controllers/etiquetasController.js";
 
 // ================= MIDDLEWARES =================
-import { protect, authorize } from '../middleware/auth.middleware.js';
+import { protect, authorize } from "../middleware/auth.middleware.js";
 import {
   validateIdParam,
   validateProductoCreate,
   validateProductoUpdate,
   handleValidationErrors,
-} from '../middleware/validation.js';
+} from "../middleware/validation.js";
 
 const router = Router();
 
-// ================= RUTAS PRINCIPALES DE PRODUCTOS (ADMINISTRADORES) =================
+// ==================================================
+// 📌 BLOQUE PRIVADO (ADMIN / SUPERADMIN)
+// ==================================================
 
-// GET /api/productos - Listar todos (ADMIN y SUPERADMIN)
-router.get('/', getProductos);
+// GET /api/productos (todos, activos e inactivos)
+router.get("/admin", adminGetProductos);
 
-// GET /api/productos/:id - Obtener por ID
-router.get( '/:id', validateIdParam('id'), handleValidationErrors, getProductoById);
+// GET /api/productos/:id (incluye inactivos)
+router.get("/admin/:id", validateIdParam("id"), handleValidationErrors, adminGetProductoById);
 
 // POST /api/productos - Crear producto
-router.post('/', protect, authorize('ADMIN', 'SUPERADMIN'), validateProductoCreate, handleValidationErrors, createProducto);
-
-// POST /api/etiquetas - Crear etiqueta
-router.post('/:idProducto/etiquetas', protect, authorize('ADMIN','SUPERADMIN'), handleValidationErrors, crearEtiquetaPorProducto);
+router.post("/", validateProductoCreate, handleValidationErrors, createProducto);
 
 // PUT /api/productos/:id - Actualizar producto
-router.put('/:id', protect, authorize('ADMIN', 'SUPERADMIN'), validateIdParam, validateProductoUpdate, handleValidationErrors, updateProducto);
+router.put("/:id", validateIdParam("id"), validateProductoUpdate, handleValidationErrors, updateProducto);
 
-// DELETE /api/productos/:id - Eliminar producto (SOLO SUPERADMIN)
-router.delete( '/:id', protect, authorize('SUPERADMIN'), validateIdParam, handleValidationErrors, deleteProducto);
+// DELETE /api/productos/:id - Baja lógica (soft delete)
+router.delete("/:id", validateIdParam("id"), handleValidationErrors, adminDeleteProducto);
 
+// PATCH /api/productos/:id/toggle - Activar/Desactivar
+router.patch("/:id/toggle", validateIdParam("id"), handleValidationErrors, toggleProductoActivo);
 
-// ================= SUB-RECURSOS DE PRODUCTOS (USUARIOS- Clientas Tienda) =================
+// PATCH / api/productos/:id/restore - Ruta para restaurar producto
+router.patch('/:id/restore',  validateIdParam("id"), handleValidationErrors, restoreProducto);
+
+// POST /api/productos/:idProducto/etiquetas - Crear etiqueta
+router.post("/:idProducto/etiquetas", validateIdParam("idProducto"), handleValidationErrors, crearEtiquetaPorProducto);
+
+// ==================================================
+// 📌 BLOQUE PÚBLICO (TIENDA ECOMMERCE)
+// ==================================================
+
+// GET /api/productos - Listar productos activos
+router.get("/", getProductos);
+
+// GET /api/productos/:id - Obtener por ID (si está activo)
+router.get("/:id", validateIdParam("id"), handleValidationErrors, getProductoById);
 
 // GET /api/productos/:id/relacionados - Productos relacionados
-router.get('/:id/relacionados', validateIdParam('id'), handleValidationErrors, obtenerProductosRelacionados);
+router.get("/:id/relacionados", validateIdParam("id"), handleValidationErrors, obtenerProductosRelacionados);
 
-// MENSAJES
-// router.get('/:productoId/mensajes', validateIdParam('idProducto'), handleValidationErrors, obtenerMensajesPorProducto);
-// router.post('/:productoId/mensajes', protect('USUARIO'), authorize('USER'), validateIdParam, handleValidationErrors, crearMensajePorProducto);
+// GET /api/productos/:productoId/variantes - Variantes
+router.get("/:productoId/variantes", validateIdParam("productoId"), handleValidationErrors, getVariantesPorProducto);
 
-// VARIANTES
-router.get('/:productoId/variantes', validateIdParam('productoId'), handleValidationErrors, getVariantesPorProducto);
+// GET reseñas de un producto
+router.get("/:idProducto/resenas", validateIdParam("idProducto"), handleValidationErrors, obtenerResenasPorProducto);
 
-// RESEÑAS
-router.get('/:idProducto/resenas', validateIdParam('idProducto'), handleValidationErrors, obtenerResenasPorProducto);
-router.post('/:idProducto/resenas', protect('USUARIO'), authorize('USER'), validateIdParam('idProducto'), handleValidationErrors, crearResenaPorProducto);
+// POST crear reseña de un producto
+router.post("/:idProducto/resenas", protect('USUARIO'), authorize("USER"), validateIdParam("idProducto"), handleValidationErrors, crearResenaPorProducto);
 
-// ETIQUETAS
-// router.get('/:idProducto/etiquetas', validateIdParam('idProducto'), handleValidationErrors, obtenerEtiquetasPorProducto);
-
+// GET etiquetas de un producto
+// router.get("/:idProducto/etiquetas", validateIdParam("idProducto"), handleValidationErrors, obtenerEtiquetasPorProducto);
 
 export default router;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { Router } from 'express';
+
+// // ================= CONTROLADORES =================
+// import {
+//   getProductos,
+//   getProductoById,
+//   createProducto,
+//   updateProducto,
+//   deleteProducto,
+//   obtenerProductosRelacionados,
+//   obtenerResenasPorProducto,
+//   crearResenaPorProducto,
+// } from '../controllers/productos.Controller.js';
+
+// import {
+//   obtenerMensajesPorProducto,
+//   crearMensajePorProducto,
+// } from '../controllers/mensajesController.js';
+
+// import { getVariantesPorProducto } from '../controllers/variantesPoductosController.js';
+
+// import {
+//   obtenerEtiquetasPorProducto,
+//   crearEtiquetaPorProducto,
+// } from '../controllers/etiquetasController.js';
+
+// // ================= MIDDLEWARES =================
+// import { protect, authorize } from '../middleware/auth.middleware.js';
+// import {
+//   validateIdParam,
+//   validateProductoCreate,
+//   validateProductoUpdate,
+//   handleValidationErrors,
+// } from '../middleware/validation.js';
+
+// const router = Router();
+
+// // ================= RUTAS PRINCIPALES DE PRODUCTOS (ADMINISTRADORES) =================
+
+// // GET /api/productos - Listar todos (ADMIN y SUPERADMIN)
+// router.get('/', getProductos);
+
+// // GET /api/productos/:id - Obtener por ID
+// router.get( '/:id', validateIdParam('id'), handleValidationErrors, getProductoById);
+
+// // POST /api/productos - Crear producto
+// router.post('/', protect, authorize('ADMIN', 'SUPERADMIN'), validateProductoCreate, handleValidationErrors, createProducto);
+
+// // POST /api/etiquetas - Crear etiqueta
+// router.post('/:idProducto/etiquetas', protect, authorize('ADMIN','SUPERADMIN'), handleValidationErrors, crearEtiquetaPorProducto);
+
+// // PUT /api/productos/:id - Actualizar producto
+// router.put('/:id', protect, authorize('ADMIN', 'SUPERADMIN'), validateIdParam, validateProductoUpdate, handleValidationErrors, updateProducto);
+
+// // DELETE /api/productos/:id - Eliminar producto (SOLO SUPERADMIN)
+// router.delete( '/:id', protect, authorize('SUPERADMIN'), validateIdParam, handleValidationErrors, deleteProducto);
+
+
+// // ================= SUB-RECURSOS DE PRODUCTOS (USUARIOS- Clientas Tienda) =================
+
+// // GET /api/productos/:id/relacionados - Productos relacionados
+// router.get('/:id/relacionados', validateIdParam('id'), handleValidationErrors, obtenerProductosRelacionados);
+
+// // MENSAJES
+// // router.get('/:productoId/mensajes', validateIdParam('idProducto'), handleValidationErrors, obtenerMensajesPorProducto);
+// // router.post('/:productoId/mensajes', protect('USUARIO'), authorize('USER'), validateIdParam, handleValidationErrors, crearMensajePorProducto);
+
+// // VARIANTES
+// router.get('/:productoId/variantes', validateIdParam('productoId'), handleValidationErrors, getVariantesPorProducto);
+
+// // RESEÑAS
+// router.get('/:idProducto/resenas', validateIdParam('idProducto'), handleValidationErrors, obtenerResenasPorProducto);
+// router.post('/:idProducto/resenas', protect('USUARIO'), authorize('USER'), validateIdParam('idProducto'), handleValidationErrors, crearResenaPorProducto);
+
+// // ETIQUETAS
+// // router.get('/:idProducto/etiquetas', validateIdParam('idProducto'), handleValidationErrors, obtenerEtiquetasPorProducto);
+
+
+// export default router;
 
 
 

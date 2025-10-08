@@ -50,19 +50,19 @@ router.get('/public/:id/productos', getProductosByCategoriaPublic); //productos 
 // // DELETE /api/categorias/:id - Eliminar (SOLO SUPERADMIN)
 // router.delete('/:id', authorize('SUPERADMIN'), validateIdParam, handleValidationErrors, deleteCategoria);
 
-// Ruta para restaurar categoría (ADMIN y SUPERADMIN)
-// router.put('/:id/restaurar', authorize('ADMIN','SUPERADMIN'), validateIdParam, handleValidationErrors, restoreCategoria);
+// PATCH /api/categorías/:id/restore (ADMIN y SUPERADMIN)
+// router.patch('/:id/restore', authorize('ADMIN','SUPERADMIN'), validateIdParam, handleValidationErrors, restoreCategoria);
 
 
 // Después (temporalmente sin autorización):
 router.get('/', getCategorias);
-router.get('/:id', validateIdParam, handleValidationErrors, getCategoriaById);
-router.get('/:id/productos', validateIdParam, handleValidationErrors, getProductosByCategoria);
+router.get('/:id', validateIdParam('id'), handleValidationErrors, getCategoriaById);
+router.get('/:id/productos', validateIdParam('id'), handleValidationErrors, getProductosByCategoria);
 router.post('/', validateCategoriaCreate, handleValidationErrors, createCategoria);
-router.put('/:id', validateIdParam, validateCategoriaUpdate, handleValidationErrors, updateCategoria);
-router.delete('/:id', validateIdParam, handleValidationErrors, deleteCategoria);
+router.put('/:id', validateIdParam('id'), validateCategoriaUpdate, handleValidationErrors, updateCategoria);
+router.delete('/:id', validateIdParam('id'), handleValidationErrors, deleteCategoria);
 // Ruta para restaurar categoría
-router.put('/:id/restaurar', validateIdParam, handleValidationErrors, restoreCategoria);
+router.patch('/:id/restore', validateIdParam('id'), handleValidationErrors, restoreCategoria);
 
 
 export default router;

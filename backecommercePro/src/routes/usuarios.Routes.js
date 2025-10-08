@@ -35,12 +35,15 @@ const router = Router();
 // // Eliminar (soft delete) un usuario ( solo SUPERADMIN)
 // router.delete('/:id', protect, authorize('SUPERADMIN'), validateIdParam, handleValidationErrors, deleteUsuario);
 
+// // Restaurar un usuario (solo ADMIN o SUPERADMIN)
+// router.patch('/:id', protect, authorize('SUPERADMIN'), validateIdParam, handleValidationErrors, restoreUsuario);
+
 router.get('/', validatePagination, handleValidationErrors, getUsuarios);
-router.get('/:id', validateIdParam, handleValidationErrors, getUsuarioById);
+router.get('/:id', validateIdParam('id'), handleValidationErrors, getUsuarioById);
 router.post('/', validateUsuarioCreate, handleValidationErrors, createUsuario);
-router.put('/:id', validateIdParam, validateUsuarioUpdate, handleValidationErrors, updateUsuario);
-router.delete('/:id', validateIdParam, handleValidationErrors, deleteUsuario);
-router.post('/:id/restore', validateIdParam, restoreUsuario);
+router.put('/:id', validateIdParam('id'), validateUsuarioUpdate, handleValidationErrors, updateUsuario);
+router.delete('/:id', validateIdParam('id'), handleValidationErrors, deleteUsuario);
+router.patch('/:id/restore', validateIdParam('id'), restoreUsuario);
 
 export default router;
 

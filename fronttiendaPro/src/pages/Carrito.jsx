@@ -132,15 +132,32 @@ function Carrito() {
           <div className="border rounded-lg p-4 bg-gray-50">
             <h2 className="text-lg font-semibold mb-2">Resumen de Compra</h2>
             <hr className="mb-2" />
-            <p className="text-sm text-gray-600">
-              Subtotal ({totalItems} productos): ${totalRedondeado}
+
+            {/* Subtotal */}
+            <p className="text-sm text-gray-600 flex justify-between">
+              <span>Subtotal ({totalItems} productos):</span>
+              <span>${totalRedondeado}</span>
             </p>
-            <p className="text-sm text-gray-600">
-              Envío: <span className="text-green-600 font-semibold">Gratis</span>
+
+            {/* Envío */}
+            <p className="text-sm text-gray-600 flex justify-between">
+              <span>Envío:</span>
+              <span className="text-green-600 font-semibold">Gratis</span>
             </p>
-            <p className="text-sm text-gray-600">Descuento envío gratis: -$0</p>
+
+            {/* Descuento */}
+            <p className="text-sm text-gray-600 flex justify-between">
+              <span>Descuento envío gratis:</span>
+              <span>-$0</span>
+            </p>
+
             <hr className="my-2" />
-            <p className="text-lg font-bold">Total: ${totalRedondeado}</p>
+
+            {/* Total */}
+            <p className="text-lg font-bold flex justify-between">
+              <span>Total:</span>
+              <span>${totalRedondeado}</span>
+            </p>
 
             <button
               onClick={() =>
@@ -151,7 +168,6 @@ function Carrito() {
                   confirmButtonText: "Aceptar",
                   confirmButtonColor: "#ec4899",
                 }).then(() => {
-                  // Redirige a la Home usando React Router
                   navigate("/");
                 })
               }
@@ -159,23 +175,27 @@ function Carrito() {
             >
               Ir a Pagar
             </button>
-
+            
             <Link
               to="/productos"
               className="block text-center mt-2 text-blue-600 hover:underline font-semibold"
             >
               Seguir comprando
             </Link>
-
+            
             {/* Bloque de beneficios */}
             <div className="mt-6 space-y-3 text-gray-700">
               <div className="flex items-center space-x-2">
                 <TruckIcon className="w-5 h-5 text-green-600" />
-                <span className="text-green-600">Envío gratis en compras mayores a $5.000</span>
+                <span className="text-green-600">
+                  Envío gratis en compras mayores a $5.000
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <ArrowPathIcon className="w-5 h-5 text-cyan-600" />
-                <span className="text-cyan-600">Cambios y devoluciones sin costo</span>
+                <span className="text-cyan-600">
+                  Cambios y devoluciones sin costo
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <ShieldCheckIcon className="w-5 h-5 text-cyan-600" />

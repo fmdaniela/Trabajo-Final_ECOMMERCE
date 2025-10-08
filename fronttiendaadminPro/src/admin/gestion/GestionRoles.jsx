@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Search, Filter, User, RotateCw } from 'lucide-react';
+import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Search, Filter, Key, RotateCw } from 'lucide-react';
 import rolService from '../../services/rolService';
+import BackToDashboardButton from "../components/BackToDashboardButton";
 
 import * as toast from '../../utils/toast';
 
@@ -32,6 +33,7 @@ function GestionRoles() {
 
   const [loading, setLoading] = useState(false);
 
+  
    // ===== Debounce de búsqueda =====
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -164,11 +166,13 @@ function GestionRoles() {
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-50 flex items-center">
-            <User className="mr-2" /> Gestión de Roles
+            <Key className="mr-2" /> Gestión de Roles
           </h1>
-          <p className="text-gray-200 mt-1">Administra los roles del sistema</p>
+          <div className="flex flex-col space-y-4">
+            <p className="text-gray-200 mt-1">Administra los roles del sistema</p>
+            {/* <BackToDashboardButton /> */}
+          </div>
         </div>
-
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
           {/* Buscador */}
           <div className="relative">
@@ -192,14 +196,14 @@ function GestionRoles() {
             </select>
             <Filter className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
           </div>
-          <div className="relative">
+          {/* <div className="relative">
             <select className={selectClasses} value={deletedFilter} onChange={(e) => setDeletedFilter(e.target.value)}>
               <option value="all">Todos (eliminados y no)</option>
               <option value="false">Solo NO eliminados</option>
               <option value="true">Solo eliminados</option>
             </select>
             <Filter className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
-          </div>
+          </div> */}
 
           {/* Botón nuevo administrador */}
           <button onClick={() => handleOpenModal()} 
@@ -347,9 +351,25 @@ function GestionRoles() {
   );
 }
 
-export default GestionRoles;
+export default GestionRoles;                                                                         
 
- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -377,7 +397,7 @@ export default GestionRoles;
 // import RenderSkeletonRows from '../../components/RenderSkeletonRows';
 
 // function GestionRoles() {
-//   // Estados
+//   // ===== Estados principales =====
 //   const [roles, setRoles] = useState([]);
 //   const [searchTerm, setSearchTerm] = useState('');
 //   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -399,16 +419,20 @@ export default GestionRoles;
 
 //   const [loading, setLoading] = useState(false);
 
-//   // Debounce de búsqueda
+//    // ===== Debounce de búsqueda =====
 //   useEffect(() => {
-//     const timerId = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500);
+//     const timerId = setTimeout(() => {
+//       setDebouncedSearchTerm(searchTerm); 
+//     }, 500)
 //     return () => clearTimeout(timerId);
 //   }, [searchTerm]);
 
 //   // Fetch roles cuando cambian filtros
-//   useEffect(() => { fetchRoles(); }, [currentPage, debouncedSearchTerm, statusFilter, deletedFilter, sortField, sortDirection]);
+//   useEffect(() => { 
+//     fetchRoles(); 
+//   }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, deletedFilter, sortField, sortDirection]);
 
-//   // Fetch roles
+//   // ===== Obtener todos los roles con filtros y paginación =====
 //   const fetchRoles = async () => {
 //     setLoading(true);
 //     try {
@@ -421,6 +445,7 @@ export default GestionRoles;
 //         sort: sortField,
 //         direction: sortDirection
 //       };
+
 //       const response = await rolService.getAll(params);
 //       const data = response.data?.data || [];
 //       setRoles(data);
@@ -435,20 +460,27 @@ export default GestionRoles;
 //     }
 //   };
 
-//   // Sorting
+//   // ===== Ordenamiento por columna =====
 //   const handleSort = (column) => {
-//     if (sortField === column) setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
-//     else { setSortField(column); setSortDirection('asc'); }
-//     setCurrentPage(1);
+//     if (sortField === column) {
+//       setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+//     } else { 
+//       setSortField(column); 
+//       setSortDirection('asc'); 
+//     }
+//       setCurrentPage(1);
 //   };
 
-//   // Inputs
+//    // ===== Inputs =====
 //   const handleInputChange = (e) => {
 //     const { name, value, type, checked } = e.target;
-//     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+//     setFormData(prev => ({ 
+//       ...prev, 
+//       [name]: type === 'checkbox' ? checked : value,
+//     }));
 //   };
 
-//   // Modal
+//   // ===== Abrir modal crear/editar =====
 //   const handleOpenModal = (rol = null) => {
 //     if (rol) {
 //       setEditingRol(rol);
@@ -461,10 +493,14 @@ export default GestionRoles;
 //   };
 //   const handleCloseModal = () => setIsModalOpen(false);
 
-//   // Crear/Editar rol
+//   // ===== Crear / Editar rol =====
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
-//     const dataToSend = { nombre: formData.codigo, descripcion: formData.descripcion, activo: formData.activo, eliminado: false };
+//     const dataToSend = { 
+//       nombre: formData.codigo, 
+//       descripcion: formData.descripcion, 
+//       activo: formData.activo, 
+//       eliminado: false };
 //     try {
 //       if (editingRol) await rolService.update(editingRol.id, dataToSend), toast.success('Rol actualizado con éxito');
 //       else await rolService.create(dataToSend), toast.success('Rol creado con éxito');
@@ -477,29 +513,41 @@ export default GestionRoles;
 //     }
 //   };
 
-//   // Delete / Restore
+//   // ===== Delete/Resort =====
 //   const handleDeleteClick = (rol) => { setRolToDelete(rol); setShowDeleteConfirm(true); };
 //   const handleConfirmDelete = async () => {
 //     if (!rolToDelete) return;
-//     try { await rolService.delete(rolToDelete.id); toast.success('Rol eliminado con éxito'); fetchRoles(); }
-//     catch (error) { console.error(error); toast.error('Error al eliminar rol'); }
+//     try { 
+//       await rolService.delete(rolToDelete.id); 
+//       toast.success('Rol eliminado con éxito'); 
+//       fetchRoles(); 
+//     } catch (error) { 
+//       console.error(error); 
+//       toast.error('Error al eliminar rol'); 
+//     }
 //     setShowDeleteConfirm(false); setRolToDelete(null);
 //   };
+
 //   const handleCancelDelete = () => { setShowDeleteConfirm(false); setRolToDelete(null); };
 //   const handleRestore = async (rol) => {
-//     try { await rolService.restore(rol.id); toast.success('Rol restaurado (quedó inactivo)'); fetchRoles(); }
-//     catch (e) { console.error(e); toast.error('No se pudo restaurar el rol'); }
+//     try { 
+//       await rolService.restore(rol.id); 
+//       toast.success('Rol restaurado (quedó inactivo)'); 
+//       fetchRoles(); 
+//     } catch (e) { 
+//       console.error(e); 
+//       toast.error('No se pudo restaurar el rol'); }
 //   };
 
 //   const paginatedRoles = roles || [];
 
-//   // Clases comunes Tailwind (azul oscuro)
-//   const inputClasses = "w-full p-2 border border-blue-500 rounded bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600";
-//   const selectClasses = "pl-10 pr-4 py-2 border border-blue-500 rounded-lg bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none";
+//   // Clases comunes Tailwind ajustadas para modal legible
+//   const inputClasses = "w-full p-2 border border-blue-600 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-blue-800";
+//   const selectClasses = "pl-10 pr-4 py-2 border border-blue-600 rounded-lg bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-blue-800 appearance-none";
 
 //   return (
 //     <div className="p-6 bg-slate-800 min-h-screen">
-//       {/* Header */}
+//       {/* ===== Header ===== */}
 //       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 //         <div>
 //           <h1 className="text-2xl font-bold text-gray-50 flex items-center">
@@ -508,19 +556,28 @@ export default GestionRoles;
 //           <p className="text-gray-200 mt-1">Administra los roles del sistema</p>
 //         </div>
 
-//         {/* Filtros y botón */}
 //         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+//           {/* Buscador */}
 //           <div className="relative">
-//             <input type="text" placeholder="Buscar rol..." className={`${inputClasses} pl-10`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-//             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-200" />
+//             <input type="text" 
+//             placeholder="Buscar rol..." 
+//             className={`${inputClasses} pl-10`} 
+//             value={searchTerm} 
+//             onChange={(e) => setSearchTerm(e.target.value)} 
+//             />
+//             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
 //           </div>
+
+//           {/* Filtros activo/inactivo  eliminado/Noeliminado */}
 //           <div className="relative">
-//             <select className={selectClasses} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+//             <select className={selectClasses} 
+//             value={statusFilter} 
+//             onChange={(e) => setStatusFilter(e.target.value)}>
 //               <option value="all">Todos los estados</option>
 //               <option value="true">Activo</option>
 //               <option value="false">Inactivo</option>
 //             </select>
-//             <Filter className="absolute left-3 top-2.5 h-5 w-5 text-gray-200" />
+//             <Filter className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
 //           </div>
 //           <div className="relative">
 //             <select className={selectClasses} value={deletedFilter} onChange={(e) => setDeletedFilter(e.target.value)}>
@@ -528,21 +585,42 @@ export default GestionRoles;
 //               <option value="false">Solo NO eliminados</option>
 //               <option value="true">Solo eliminados</option>
 //             </select>
-//             <Filter className="absolute left-3 top-2.5 h-5 w-5 text-gray-200" />
+//             <Filter className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
 //           </div>
-//           <button onClick={() => handleOpenModal()} className="flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-700 to-blue-900 text-white rounded-lg hover:from-blue-800 hover:to-blue-950 transition-all duration-200 shadow-md">
-//             <Plus className="h-5 w-5 mr-2" /> Nuevo Rol
+
+//           {/* Botón nuevo administrador */}
+//           <button onClick={() => handleOpenModal()} 
+//           className="flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-700 to-blue-800 text-white rounded-lg hover:from-blue-800 hover:to-blue-900 transition-all duration-200 shadow-md"
+//           >
+//             <Plus className="h-5 w-5 mr-2" /> 
+//             Nuevo Rol
 //           </button>
 //         </div>
 //       </div>
 
-//       {/* Tabla */}
 //       <div className="overflow-x-auto">
+//         <div className="flex justify-end items-center mb-4">
+//           <label htmlFor="itemsPerPage" className="mr-2 text-sm text-gray-100">Mostrar</label>
+//           <select
+//             id="itemsPerPage"
+//             value={itemsPerPage}
+//             onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+//             className="border-gray-300 bg-white  rounded-md px-2 py-1 text-sm  "
+//           >
+//             <option value={5}>5</option>
+//             <option value={10}>10</option>
+//             <option value={20}>20</option>  
+//             <option value={50}>50</option>
+//           </select>
+//           <span className="ml-2 text-sm text-gray-100">registros por página</span>
+//         </div>
+//       {/* ===== Tabla de roles ===== */}
 //         <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
 //           <thead className="bg-blue-900">
 //             <tr>
 //               {['codigo', 'descripcion', 'activo'].map(col => (
-//                 <th key={col} className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider cursor-pointer" onClick={() => handleSort(col)}>
+//                 <th key={col} className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider cursor-pointer" 
+//                 onClick={() => handleSort(col)}>
 //                   <div className="flex items-center">
 //                     {col === 'codigo' ? 'Código' : col === 'descripcion' ? 'Descripción' : 'Estado'}
 //                     {sortField === col && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />)}
@@ -575,8 +653,18 @@ export default GestionRoles;
 //                         </button>
 //                       ) : (
 //                         <>
-//                           <button onClick={() => handleOpenModal(rol)} className="text-blue-700 hover:text-blue-900" title="Editar"><Edit className="h-5 w-5" /></button>
-//                           <button onClick={() => handleDeleteClick(rol)} className="text-red-600 hover:text-red-900" title="Eliminar"><Trash2 className="h-5 w-5" /></button>
+//                           <button 
+//                           onClick={() => handleOpenModal(rol)} 
+//                           className="text-blue-700 hover:text-blue-900" title="Editar"
+//                           >
+//                             <Edit className="h-5 w-5" />
+//                           </button>
+//                           <button 
+//                           onClick={() => handleDeleteClick(rol)} 
+//                           className="text-red-600 hover:text-red-900" title="Eliminar"
+//                           >
+//                             <Trash2 className="h-5 w-5" />
+//                           </button>
 //                         </>
 //                       )}
 //                     </div>
@@ -588,39 +676,58 @@ export default GestionRoles;
 //         </table>
 //       </div>
 
-//       {/* Paginación */}
-//       <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={setCurrentPage} />
+//       {/* ===== Paginación ===== */}
+//       <Pagination 
+//       currentPage={currentPage} 
+//       totalPages={totalPages} 
+//       totalItems={totalItems} 
+//       itemsPerPage={itemsPerPage} 
+//       onPageChange={setCurrentPage} />
 
-//       {/* Modal Crear/Editar */}
+//       {/* ===== Modal Crear/Editar rol ===== */}
 //       {isModalOpen && (
 //         <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingRol ? 'Editar Rol' : 'Crear Nuevo Rol'}>
 //           <form onSubmit={handleSubmit}>
 //             <div className="grid grid-cols-1 gap-4">
 //               <div>
-//                 <label htmlFor="codigo" className="block text-sm font-medium text-gray-300 mb-1">Código</label>
+//                 <label htmlFor="codigo" className="block text-sm font-medium text-gray-900 mb-1">Código</label>
 //                 <input type="text" id="codigo" name="codigo" value={formData.codigo} onChange={handleInputChange} className={inputClasses} required />
 //               </div>
 //               <div>
-//                 <label htmlFor="descripcion" className="block text-sm font-medium text-gray-300 mb-1">Descripción</label>
+//                 <label htmlFor="descripcion" className="block text-sm font-medium text-gray-900 mb-1">Descripción</label>
 //                 <textarea id="descripcion" name="descripcion" value={formData.descripcion} onChange={handleInputChange} className={inputClasses} rows="3" />
 //               </div>
 //               <div className="flex items-center">
-//                 <input type="checkbox" id="activo" name="activo" checked={formData.activo} onChange={handleInputChange} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700" />
-//                 <label htmlFor="activo" className="ml-2 block text-sm font-medium text-gray-300">Activo</label>
+//                 <input type="checkbox" id="activo" name="activo" checked={formData.activo} onChange={handleInputChange} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+//                 <label htmlFor="activo" className="ml-2 block text-sm font-medium text-gray-900">Activo</label>
 //               </div>
 //             </div>
 //             <div className="flex justify-end space-x-2 mt-4">
-//               <button type="button" onClick={handleCloseModal} className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancelar</button>
-//               <button type="submit" className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-800">{editingRol ? 'Actualizar' : 'Crear'}</button>
+//               <button 
+//               type="button" 
+//               onClick={handleCloseModal} 
+//               className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancelar</button>
+//               <button 
+//               type="submit" 
+//               className="px-4 py-2 bg-blue-800 text-white rounded hover:bg-blue-900">{editingRol ? 'Actualizar' : 'Crear'}</button>
 //             </div>
 //           </form>
 //         </Modal>
 //       )}
 
-//       {/* Confirmación eliminación */}
+//        {/* ===== Confirmación eliminación ===== */}
 //       {showDeleteConfirm && (
-//         <ConfirmationDialog isOpen={showDeleteConfirm} onClose={handleCancelDelete} title="Confirmar Eliminación" onConfirm={handleConfirmDelete} confirmText="Eliminar" cancelText="Cancelar" confirmClass="bg-red-500 hover:bg-red-600">
-//           ¿Estás seguro de que deseas eliminar el rol <strong>{rolToDelete?.codigo}</strong>? Esta acción no se puede deshacer.
+//         <ConfirmationDialog 
+//         isOpen={showDeleteConfirm} 
+//         onClose={handleCancelDelete} 
+//         title="Confirmar Eliminación" 
+//         onConfirm={handleConfirmDelete} 
+//         confirmText="Eliminar" 
+//         cancelText="Cancelar" 
+//         confirmClass="bg-red-500 hover:bg-red-600">
+//           ¿Estás seguro de que deseas eliminar el rol 
+//           <strong>
+//             {rolToDelete?.codigo}</strong>? Esta acción no se puede deshacer.
 //         </ConfirmationDialog>
 //       )}
 //     </div>
@@ -629,11 +736,7 @@ export default GestionRoles;
 
 // export default GestionRoles;
 
-
-
-
-
-
+ 
 
 
 

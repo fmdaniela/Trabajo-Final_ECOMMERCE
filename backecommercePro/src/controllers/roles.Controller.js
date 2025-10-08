@@ -44,6 +44,7 @@ export const getRoles = async (req, res) => {
       limit: Number(limit),
       offset,
     });
+    
 
     res.json({
       success: true,
@@ -215,4 +216,16 @@ export const restoreRol = async (req, res) => {
     });
   }
 };
+
+export const toggleActivo = async (rol) => {
+  try {
+    await rolService.update(rol.id, { ...rol, activo: !rol.activo });
+    toast.success(`Rol ${rol.activo ? 'desactivado' : 'activado'} con éxito`);
+    fetchRoles();
+  } catch (error) {
+    console.error(error);
+    toast.error('No se pudo actualizar el rol');
+  }
+};
+
 

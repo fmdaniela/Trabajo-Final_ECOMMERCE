@@ -31,18 +31,22 @@ const router = Router();
 // // GET /api/administradores/:id - Obtener por ID (ADMIN y SUPERADMIN)
 // router.get('/:id', authorize('ADMIN','SUPERADMIN'), validateIdParam, handleValidationErrors, getAdministrador);
 
-
 // // PUT /api/administradores/:id - Actualizar (ADMIN y SUPERADMIN)
 // router.put('/:id', authorize('ADMIN','SUPERADMIN'), validateIdParam, handleValidationErrors, updateAdministrador);
 
 // // DELETE /api/administradores/:id - Eliminar (SOLO SUPERADMIN)
 // router.delete('/:id', authorize('SUPERADMIN'), validateIdParam, handleValidationErrors, deleteAdministrador);
 
-router.post('/', createAdministrador);
-router.get('/', getAdministradores);
-router.get('/', getAdministradorById);
-router.put('/:id', updateAdministrador);
-router.delete('/:id', deleteAdministrador);
-router.put('/:id/restore', restoreAdministrador);
+// // PATCH /api/administradores/:id/restore - Restaurar (ADMIN y SUPERADMIN)
+// router.patch('/:id', authorize('ADMIN','SUPERADMIN'), validateIdParam, handleValidationErrors, restoreAdministrador);
+
+
+/* Rutas para probar */
+router.get('/', handleValidationErrors, getAdministradores);
+router.get('/:id', validateIdParam('id'), handleValidationErrors, getAdministradorById);
+router.post('/', handleValidationErrors, createAdministrador);
+router.put('/:id', validateIdParam('id'), handleValidationErrors, updateAdministrador);
+router.delete('/:id', validateIdParam('id'), handleValidationErrors, deleteAdministrador);
+router.patch('/:id/restore', validateIdParam('id'), restoreAdministrador);
 
 export default router;

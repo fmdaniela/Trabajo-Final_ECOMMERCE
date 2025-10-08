@@ -72,7 +72,7 @@ const administradorService = {
  * @returns {Promise} - Promesa con la respuesta de la restauración
  */
  restore: async (id, token) => {
-  return api.put(`${BASE_URL}/${id}/restore`, null, {
+  return api.patch(`${BASE_URL}/${id}/restore`, null, {
     ...(token && { headers: { Authorization: `Bearer ${token}` } }),
     });
   },

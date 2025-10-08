@@ -44,7 +44,12 @@ const Producto = sequelize.define('Producto', {
     validate: {   
       min: 0,
       max: 100
-  }
+    }
+  },
+  activo: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
   },
   idCategoria: {
     type: DataTypes.INTEGER,

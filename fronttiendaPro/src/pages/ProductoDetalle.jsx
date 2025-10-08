@@ -38,34 +38,39 @@ const ProductoDetalle = () => {
 
   const { agregarProducto } = useCarrito();
 
-  // Traer datos al montar
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    // Traer datos al montar
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+        
+          const [dataProducto, dataVariantes, dataRelacionados, dataResenas] =
+            await Promise.all([
+              productosService.obtenerProductoPorId(id),
+              variantesService.getVariantesPorProducto(id),
+              productosService.obtenerProductosRelacionados(id),
+              resenasService.obtenerResenasPorProducto(id),
+            ]);
+          
+          setProducto(dataProducto); //antes tenia asi: dataProducto.data
+          setVariantes(dataVariantes);
+          
+          // ✅ Filtramos solo productos activos
+          const productosRelacionadosActivos = dataRelacionados.filter(p => p.activo);
+          setProductosRelacionados(productosRelacionadosActivos);
+          
+          setResenas(dataResenas);
+        } catch (err) {
+          console.error(err);
+          setError("No se pudo cargar el producto.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }, [id]);
 
-        const [dataProducto, dataVariantes, dataRelacionados, dataResenas] =
-          await Promise.all([
-            productosService.obtenerProductoPorId(id),
-            variantesService.getVariantesPorProducto(id),
-            productosService.obtenerProductosRelacionados(id),
-            resenasService.obtenerResenasPorProducto(id),
-          ]);
-
-        setProducto(dataProducto.data);
-        setVariantes(dataVariantes);
-        setProductosRelacionados(dataRelacionados);
-        setResenas(dataResenas);
-      } catch (err) {
-        console.error(err);
-        setError("No se pudo cargar el producto.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [id]);
 
   // 🔹 Detectar variante seleccionada (talle + color)
   useEffect(() => {

@@ -18,6 +18,7 @@ const productoService = {
       ...(sort && { sort }),
       ...(direction && { direction }),
     };
+    
 
     return api.get(`${BASE_URL}/admin`, { 
       params,
@@ -36,20 +37,24 @@ const productoService = {
 
   /**
    * Crea un producto
+   * Soporta archivos con FormData (Multer)
    */
-  create: async (data, token) => {
-    return api.post(BASE_URL, data, {
-      headers: token && { Authorization: `Bearer ${token}` }
-    });
+  create: async (data, token, isMultipart = false) => {
+    const headers = { ...(token && { Authorization: `Bearer ${token}` }) };
+    if (isMultipart) headers["Content-Type"] = "multipart/form-data";
+
+    return api.post(BASE_URL, data, { headers });
   },
 
   /**
    * Actualiza un producto
+   * Soporta archivos con FormData (Multer)
    */
-  update: async (id, data, token) => {
-    return api.put(`${BASE_URL}/${id}`, data, {
-      headers: token && { Authorization: `Bearer ${token}` }
-    });
+  update: async (id, data, token, isMultipart = false) => {
+    const headers = { ...(token && { Authorization: `Bearer ${token}` }) };
+    if (isMultipart) headers["Content-Type"] = "multipart/form-data";
+
+    return api.put(`${BASE_URL}/${id}`, data, { headers });
   },
 
   /**
@@ -70,11 +75,11 @@ const productoService = {
     });
   },
   
-  toggleActivo: async (id, token) => {
-     return api.patch(`${BASE_URL}/${id}/toggle`, {}, {
-       headers: token && { Authorization: `Bearer ${token}` }
-     });
-  }
+  // toggleActivo: async (id, token) => {
+  //    return api.patch(`${BASE_URL}/${id}/toggle`, {}, {
+  //      headers: token && { Authorization: `Bearer ${token}` }
+  //    });
+  // }
 };
 
 export default productoService;
@@ -89,20 +94,15 @@ export default productoService;
 
 
 
-
-
-
-
-
-
-
-
-
-// import API from './api';
+// // src/services/productoService.js
+// import api from './api';
 
 // const BASE_URL = '/productos';
 
-// const productosService = {
+// const productoService = {
+//   /**
+//    * Obtiene todos los productos con paginación y filtros
+//    */
 //   getAll: async (options = {}, token) => {
 //     const { page = 1, limit = 10, search, activo, sort, direction } = options;
 
@@ -115,41 +115,82 @@ export default productoService;
 //       ...(direction && { direction }),
 //     };
 
-//     return API.get(BASE_URL, {
+//     return api.get(`${BASE_URL}/admin`, { 
 //       params,
 //       headers: token && { Authorization: `Bearer ${token}` }
 //     });
 //   },
 
+//   /**
+//    * Obtiene un producto por ID
+//    */
 //   getById: async (id, token) => {
-//     return API.get(`${BASE_URL}/${id}`, {
+//     return api.get(`${BASE_URL}/${id}`, {
 //       headers: token && { Authorization: `Bearer ${token}` }
 //     });
 //   },
 
+//   /**
+//    * Crea un producto
+//    */
 //   create: async (data, token) => {
-//     return API.post(BASE_URL, data, {
+//     return api.post(BASE_URL, data, {
 //       headers: token && { Authorization: `Bearer ${token}` }
 //     });
 //   },
 
+//   /**
+//    * Actualiza un producto
+//    */
 //   update: async (id, data, token) => {
-//     return API.put(`${BASE_URL}/${id}`, data, {
+//     return api.put(`${BASE_URL}/${id}`, data, {
 //       headers: token && { Authorization: `Bearer ${token}` }
 //     });
 //   },
 
+//   /**
+//    * Elimina un producto
+//    */
 //   delete: async (id, token) => {
-//     return API.delete(`${BASE_URL}/${id}`, {
+//     return api.delete(`${BASE_URL}/${id}`, {
 //       headers: token && { Authorization: `Bearer ${token}` }
 //     });
 //   },
 
-//   toggleActivo: async (id, token) => {
-//     return API.patch(`${BASE_URL}/${id}/toggle`, {}, {
+//   /**
+//    * Restaura o activa/desactiva un producto
+//    */
+//   restore: async (id, token) => {
+//     return api.patch(`${BASE_URL}/${id}/restore`, {}, {
 //       headers: token && { Authorization: `Bearer ${token}` }
 //     });
+//   },
+  
+//   toggleActivo: async (id, token) => {
+//      return api.patch(`${BASE_URL}/${id}/toggle`, {}, {
+//        headers: token && { Authorization: `Bearer ${token}` }
+//      });
 //   }
 // };
 
-// export default productosService;
+// export default productoService;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

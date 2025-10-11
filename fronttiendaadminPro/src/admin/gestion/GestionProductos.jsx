@@ -40,6 +40,7 @@ function GestionProductos() {
   const [editingProducto, setEditingProducto] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [productoToDelete, setProductoToDelete] = useState(null);
+  
 
   // --- Debounce de búsqueda ---
   useEffect(() => {
@@ -121,27 +122,59 @@ function GestionProductos() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
-      const dataToSend = { ...formData };
-      if (editingProducto) {
-        await productosService.update(editingProducto.id, dataToSend);
-        toast.success('Producto actualizado con éxito');
+      const token = localStorage.getItem("token");
+      const admin = JSON.parse(localStorage.getItem("admin")) || {};
+      
+      let dataToSend;
+    
+      // Verificamos si hay una imagen (archivo)
+      if (formData.imagen instanceof File) {
+        dataToSend = new FormData();
+        Object.entries(formData).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) {
+            dataToSend.append(key, value);
+          }
+        });
+      
+        // Campos obligatorios si no están
+        if (!formData.actividadDeportiva) dataToSend.append("actividadDeportiva", "General");
+        if (!formData.idAdministrador) dataToSend.append("idAdministrador", admin.id || 1);
+      
+        // Envío al backend
+        if (editingProducto) {
+          await productosService.update(editingProducto.id, dataToSend, token, true);
+        } else {
+          await productosService.create(dataToSend, token, true);
+        }
       } else {
-        await productosService.create(dataToSend);
-        toast.success('Producto creado con éxito');
+        // Envío como JSON normal
+        const plainData = {
+          ...formData,
+          actividadDeportiva: formData.actividadDeportiva || "General",
+          idAdministrador: formData.idAdministrador || admin.id || 1,
+        };
+      
+        if (editingProducto) {
+          await productosService.update(editingProducto.id, plainData, token);
+        } else {
+          await productosService.create(plainData, token);
+        }
       }
+    
+      fetchProductos(); // refresca la lista
       handleCloseModal();
-      fetchProductos();
     } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || 'Error al guardar producto');
+      console.error("Error al guardar producto:", error);
     }
   };
+
 
   // --- Restaurar / Eliminar ---
   const handleRestaurar = async (id) => {
     try {
-      const { data } = await productosService.toggleActivo(id);
+      const { data } = await productosService.restore(id);
       toast.success(data.message || 'Producto restaurado');
       fetchProductos();
     } catch (error) {
@@ -266,7 +299,15 @@ function GestionProductos() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{p.categoria?.nombre || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
-                    <img src={p.imagenUrl} alt={p.nombre} className="h-12 w-12 object-cover rounded" />
+                    {/* <img src={p.imagenUrl} alt={p.nombre} className="h-12 w-12 object-cover rounded" /> */}
+                    <img
+                      src={p.imagenUrl ? p.imagenUrl.startsWith("http") ? p.imagenUrl
+                            : `http://localhost:3000${p.imagenUrl}`
+                            : "https://via.placeholder.com/300"
+                      }
+                      alt={p.nombre}
+                      className="h-12 w-12 object-cover rounded" 
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{moment(p.updatedAt).format('DD/MM/YYYY HH:mm:ss')}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
@@ -302,52 +343,208 @@ function GestionProductos() {
 
       {/* Modal */}
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingProducto ? 'Editar Producto' : 'Crear Nuevo Producto'}>
+        <Modal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          title={editingProducto ? 'Editar Producto' : 'Crear Nuevo Producto'}
+        >
           <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+      
+            {/* Nombre */}
             <div>
-              <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
-              <input type="text" id="nombre" name="nombre" value={formData.nombre} onChange={handleInputChange} className={inputClasses} required />
+              <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Nombre
+              </label>
+              <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleInputChange}
+                className={inputClasses}
+                required
+              />
             </div>
+      
+            {/* Descripción */}
             <div>
-              <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-              <textarea id="descripcion" name="descripcion" value={formData.descripcion} onChange={handleInputChange} rows="3" className={inputClasses} />
+              <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Descripción
+              </label>
+              <textarea
+                id="descripcion"
+                name="descripcion"
+                value={formData.descripcion}
+                onChange={handleInputChange}
+                rows="3"
+                className={inputClasses}
+              />
             </div>
+      
+            {/* Precio */}
             <div>
-              <label htmlFor="precio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Precio</label>
-              <input type="number" step="0.01" min="0" id="precio" name="precio" value={formData.precio} onChange={handleInputChange} className={inputClasses} required />
+              <label htmlFor="precio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Precio
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                id="precio"
+                name="precio"
+                value={formData.precio}
+                onChange={handleInputChange}
+                className={inputClasses}
+                required
+              />
             </div>
+      
+            {/* Categoría */}
             <div>
-              <label htmlFor="idCategoria" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
-              <select id="idCategoria" name="idCategoria" value={formData.idCategoria} onChange={handleInputChange} className={inputClasses} required>
+              <label htmlFor="idCategoria" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Categoría
+              </label>
+              <select
+                id="idCategoria"
+                name="idCategoria"
+                value={formData.idCategoria}
+                onChange={handleInputChange}
+                className={inputClasses}
+                required
+              >
                 <option value="">Seleccione categoría</option>
-                {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                {categorias.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
               </select>
             </div>
+              
+            {/* Imagen: opción 1 - subir archivo */}
             <div>
-              <label htmlFor="imagenUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL de Imagen</label>
-              <input type="text" id="imagenUrl" name="imagenUrl" value={formData.imagenUrl} onChange={handleInputChange} className={inputClasses} required />
+              <label htmlFor="imagen" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Imagen (archivo)
+              </label>
+              <input
+                type="file"
+                id="imagen"
+                name="imagen"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setFormData({ ...formData, imagen: file });
+                    // mostrar vista previa temporal
+                    const previewUrl = URL.createObjectURL(file);
+                    setFormData(prev => ({ ...prev, imagenUrl: previewUrl }));
+                  }
+                }}
+                className={inputClasses}
+              />
             </div>
+              
+            {/* Imagen: opción 2 - URL externa */}
+            <div>
+              <label htmlFor="imagenUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                URL de Imagen (opcional)
+              </label>
+              <input
+                type="text"
+                id="imagenUrl"
+                name="imagenUrl"
+                value={formData.imagenUrl}
+                onChange={handleInputChange}
+                className={inputClasses}
+              />
+            </div>
+              
+            {/* Vista previa */}
+            {formData.imagenUrl && (
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 mb-1">Vista previa:</p>
+                <img
+                  src={
+                    formData.imagenUrl.startsWith('http')
+                      ? formData.imagenUrl
+                      : formData.imagenUrl.startsWith('blob:')
+                      ? formData.imagenUrl // imagen temporal desde file input
+                      : `http://localhost:3000${formData.imagenUrl}`
+                  }
+                  alt="Vista previa"
+                  className="h-32 w-auto object-cover rounded border"
+                />
+              </div>
+            )}
+
+            {/* Checkboxes */}
             <div className="flex items-center space-x-4">
               <div>
-                <input type="checkbox" id="activo" name="activo" checked={formData.activo} onChange={handleInputChange} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-                <label htmlFor="activo" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Activo</label>
+                <input
+                  type="checkbox"
+                  id="activo"
+                  name="activo"
+                  checked={formData.activo}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="activo" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Activo
+                </label>
               </div>
               <div>
-                <input type="checkbox" id="oferta" name="oferta" checked={formData.oferta} onChange={handleInputChange} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-                <label htmlFor="oferta" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">En Oferta</label>
+                <input
+                  type="checkbox"
+                  id="oferta"
+                  name="oferta"
+                  checked={formData.oferta}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="oferta" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  En Oferta
+                </label>
               </div>
             </div>
+          
+            {/* Descuento */}
             <div>
-              <label htmlFor="descuento" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descuento (%)</label>
-              <input type="number" step="1" min="0" max="100" id="descuento" name="descuento" value={formData.descuento} onChange={handleInputChange} className={inputClasses} />
+              <label htmlFor="descuento" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Descuento (%)
+              </label>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                max="100"
+                id="descuento"
+                name="descuento"
+                value={formData.descuento}
+                onChange={handleInputChange}
+                className={inputClasses}
+              />
             </div>
+          
+            {/* Botones */}
             <div className="flex justify-end space-x-2 mt-4">
-              <button type="button" onClick={handleCloseModal} className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancelar</button>
-              <button type="submit" className="px-4 py-2 bg-blue-800 text-white rounded hover:bg-blue-900">{editingProducto ? 'Actualizar' : 'Crear'}</button>
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-800 text-white rounded hover:bg-blue-900"
+              >
+                {editingProducto ? 'Actualizar' : 'Crear'}
+              </button>
             </div>
           </form>
         </Modal>
       )}
+
 
       {/* Confirmación eliminación */}
       {showDeleteConfirm && (

@@ -9,7 +9,7 @@ import {
   updateProducto,
   adminDeleteProducto,
   restoreProducto,
-  toggleProductoActivo,
+  // toggleProductoActivo,
 
   // 🔹 PÚBLICO (TIENDA)
   getProductos,
@@ -27,12 +27,15 @@ import {
 
 // ================= MIDDLEWARES =================
 import { protect, authorize } from "../middleware/auth.middleware.js";
+
 import {
   validateIdParam,
   validateProductoCreate,
   validateProductoUpdate,
   handleValidationErrors,
 } from "../middleware/validation.js";
+
+import { upload } from "../middleware/uploadMiddleware.js";
 
 const router = Router();
 
@@ -46,20 +49,40 @@ router.get("/admin", adminGetProductos);
 // GET /api/productos/:id (incluye inactivos)
 router.get("/admin/:id", validateIdParam("id"), handleValidationErrors, adminGetProductoById);
 
-// POST /api/productos - Crear producto
-router.post("/", validateProductoCreate, handleValidationErrors, createProducto);
+// // POST /api/productos - Crear producto
+// router.post("/", validateProductoCreate, handleValidationErrors, createProducto);
 
-// PUT /api/productos/:id - Actualizar producto
-router.put("/:id", validateIdParam("id"), validateProductoUpdate, handleValidationErrors, updateProducto);
+// // PUT /api/productos/:id - Actualizar producto
+// router.put("/:id", validateIdParam("id"), validateProductoUpdate, handleValidationErrors, updateProducto);
+
+// POST /api/productos - Crear producto con imagen
+router.post(
+  "/",
+  upload.single("imagen"),
+  validateProductoCreate,
+  handleValidationErrors,
+  createProducto
+);
+
+// PUT /api/productos/:id - Actualizar producto con imagen
+router.put(
+  "/:id",
+  upload.single("imagen"),
+  validateIdParam("id"),
+  validateProductoUpdate,
+  handleValidationErrors,
+  updateProducto
+);
+
 
 // DELETE /api/productos/:id - Baja lógica (soft delete)
 router.delete("/:id", validateIdParam("id"), handleValidationErrors, adminDeleteProducto);
 
-// PATCH /api/productos/:id/toggle - Activar/Desactivar
-router.patch("/:id/toggle", validateIdParam("id"), handleValidationErrors, toggleProductoActivo);
-
 // PATCH / api/productos/:id/restore - Ruta para restaurar producto
 router.patch('/:id/restore',  validateIdParam("id"), handleValidationErrors, restoreProducto);
+
+// // PATCH /api/productos/:id/toggle - Activar/Desactivar
+// router.patch("/:id/toggle", validateIdParam("id"), handleValidationErrors, toggleProductoActivo);
 
 // POST /api/productos/:idProducto/etiquetas - Crear etiqueta
 router.post("/:idProducto/etiquetas", validateIdParam("idProducto"), handleValidationErrors, crearEtiquetaPorProducto);

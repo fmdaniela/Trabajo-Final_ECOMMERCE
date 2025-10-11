@@ -8,6 +8,7 @@ import usuariosRoutes from './usuarios.Routes.js'; // CRUD de usuarios
 import productosRoutes from './productos.Routes.js';
 import carritosRoutes from './carritos.Routes.js';
 import panelAdminRoutes from './panelAdmin.Routes.js'
+import imagenesProductosRoutes from './imagenesProductos.Routes.js';
 
 
 
@@ -24,7 +25,7 @@ import lecturasBlogArticulosRoutes from './lecturasBlogArticulosRoutes.js';
 import resenasRoutes from './resenasRoutes.js';
 import cuponesDescuentosRoutes from './cuponesDescuentosRoutes.js';
 import paisesRoutes from './paisesRoutes.js';
-import imagenesProductosRoutes from './imagenesProductosRoutes.js';
+
 
 
 
@@ -43,6 +44,7 @@ router.use('/usuarios', usuariosRoutes);
 router.use('/productos', productosRoutes);
 router.use('/carritos', carritosRoutes);
 router.use('/admin', panelAdminRoutes);
+router.use('/', imagenesProductosRoutes); // Monta sin prefijo imagenesProductos
 
 
 router.use('/telefonos', telefonosRoutes); // monta las rutas definidas en router. va en plural
@@ -58,7 +60,7 @@ router.use('/lecturasBlogArticulos', lecturasBlogArticulosRoutes);
 router.use('/resenas', resenasRoutes);
 router.use('/cuponesDescuentos', cuponesDescuentosRoutes);
 router.use('/paises', paisesRoutes);
-router.use('/', imagenesProductosRoutes); // Monta sin prefijo imagenesProductos
+
 
 
 

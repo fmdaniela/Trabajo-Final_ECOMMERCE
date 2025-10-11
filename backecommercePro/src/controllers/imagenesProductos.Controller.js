@@ -1,6 +1,7 @@
 import ImagenProducto from '../models/ImagenProducto.js';
 import Producto from '../models/Producto.js'
 
+
 // Obtener todas las imágenes de un producto
 export const obtenerImagenesPorProducto = async (req, res) => {
     try {

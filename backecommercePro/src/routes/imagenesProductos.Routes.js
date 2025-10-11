@@ -3,7 +3,7 @@ import {
   obtenerImagenesPorProducto,
   agregarImagenPorProducto ,
   
-} from '../controllers/imagenesProductosController.js';
+} from '../controllers/imagenesProductos.Controller.js';
 
 const router = Router();
 

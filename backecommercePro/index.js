@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import sequelize from './src/db/connection.js'; // Conexión a la BD
 import routerPrincipal from './src/routes/index.js'; // Rutas principales
 import { notFound, errorHandler } from './src/middleware/errorHandler.js';
+import path from "path";               
+import { fileURLToPath } from "url"
 
 
 //  1. Cargar variables de entorno
@@ -38,6 +40,20 @@ app.use(morgan(process.env.NODE_ENV === 'development' ? "dev" : "combined")); //
 app.use(express.json({ limit: '10mb' })); // convierte el body a JSON
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// //para servir las imágenes públicamente:
+// app.use('/uploads', express.static('uploads'));
+
+// Necesario para construir rutas absolutas correctamente en ESModules:
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// middleware que sirve imágenes:
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, path) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  }
+}));
+
 
 // 4. Ruta de salud de la API
 app.get('/health', (req, res) => {
@@ -49,7 +65,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Agrega esto ANTES de tus rutas
+
 app.use((req, res, next) => {
   console.log(`📍 ${new Date().toISOString()} ${req.method} ${req.url}`);
   next();

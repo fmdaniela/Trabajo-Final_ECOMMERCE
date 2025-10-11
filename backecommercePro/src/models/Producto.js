@@ -32,6 +32,10 @@ const Producto = sequelize.define('Producto', {
     type: DataTypes.STRING(500),
     allowNull: false
   },
+  thumbnailUrl: {        
+    type: DataTypes.STRING(500),
+    allowNull: true
+  },
   oferta: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

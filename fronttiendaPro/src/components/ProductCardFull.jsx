@@ -1,6 +1,5 @@
 import useCupon from "../hooks/useCupon";
 import { Link } from 'react-router-dom';
-import { useCarrito } from "../context/CarritoContext";
 
 function ProductCardFull({ producto }) {
   const { nombre, imagenUrl, precio, oferta, descuento } = producto;
@@ -27,10 +26,18 @@ function ProductCardFull({ producto }) {
     <div className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-transform transform hover:scale-105 border">
       
       <img
-        src={imagenUrl || "https://via.placeholder.com/300"}
-        alt={nombre}
-        className="w-full h-48 object-cover rounded-lg mb-4"
-      />
+  src={
+    producto.thumbnailUrl
+      ? `http://localhost:3000${producto.thumbnailUrl}`
+      : imagenUrl
+      ? imagenUrl.startsWith("http")
+        ? imagenUrl
+        : `http://localhost:3000${imagenUrl}`
+      : "https://via.placeholder.com/300"
+  }
+  alt={nombre}
+  className="w-full h-48 object-cover rounded-lg mb-4"
+/>
 
       {/*Mostramos las etiquetas en las cards*/}
       {producto.etiquetas?.length > 0 && ( // evita errores si etiquetas está undefined (antes que cargue del fetch).

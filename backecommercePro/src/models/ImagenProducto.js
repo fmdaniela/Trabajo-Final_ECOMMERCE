@@ -11,6 +11,10 @@ const ImagenProducto = sequelize.define('ImagenProducto', {
     type: DataTypes.TEXT,
     allowNull: false,
   },
+  thumbnailUrl: {        
+    type: DataTypes.TEXT,
+    allowNull: true, // para poder guardar thumbnail generado
+  },
   idProducto: {
     type: DataTypes.INTEGER,
     allowNull: false,

@@ -1,5 +1,8 @@
 import { Producto, Categoria, Resena } from '../models/index.js';
 import { Op } from "sequelize";
+import fs from "fs/promises"; 
+import path from "path";
+import sharp from 'sharp';
 
 
 // ==================================================
@@ -74,30 +77,190 @@ export const adminGetProductoById = async (req, res) => {
   }
 };
 
-// POST crear producto
+//POST - createProducto con thumbnails (asincrónico)
 export const createProducto = async (req, res) => {
   try {
-    const nuevoProducto = await Producto.create(req.body);
-    res.status(201).json(nuevoProducto);
+    const datosProducto = req.body;
+
+    if (req.file) {
+      const imagenPath = req.file.path;
+      const thumbsDir = path.join("uploads/productos/thumbs");
+
+      // Crear carpeta thumbs si no existe
+      try {
+        await fs.access(thumbsDir);
+      } catch {
+        await fs.mkdir(thumbsDir, { recursive: true });
+      }
+
+      const thumbPath = path.join(thumbsDir, req.file.filename);
+
+      // Generar thumbnail
+      await sharp(imagenPath).resize(200).toFile(thumbPath);
+
+      // Guardar rutas en la DB
+      datosProducto.imagenUrl = `/uploads/productos/${req.file.filename}`;
+      datosProducto.thumbnailUrl = `/uploads/productos/thumbs/${req.file.filename}`;
+    }
+
+    if (!datosProducto.actividadDeportiva) datosProducto.actividadDeportiva = "General";
+    if (!datosProducto.idAdministrador) datosProducto.idAdministrador = 1;
+
+    const nuevoProducto = await Producto.create(datosProducto);
+
+    res.status(201).json({
+      success: true,
+      message: "Producto creado correctamente",
+      data: nuevoProducto,
+    });
   } catch (error) {
     console.error("Error al crear producto:", error);
-    res.status(500).json({ error: "Error al crear producto" });
+    res.status(500).json({ success: false, error: "Error al crear producto" });
   }
 };
 
-// PUT actualizar producto
+
+// // POST crear producto
+// export const createProducto = async (req, res) => {
+//   try {
+//     const datosProducto = req.body;
+
+//     // Si se subió una imagen, guardamos la ruta relativa en imagenUrl
+//     if (req.file) {
+//       datosProducto.imagenUrl = `/uploads/productos/${req.file.filename}`;
+//     }
+
+//     // Campos obligatorios con valores por defecto si no vienen
+//     if (!datosProducto.actividadDeportiva) {
+//       datosProducto.actividadDeportiva = "General";
+//     }
+
+//     if (!datosProducto.idAdministrador) {
+//       // Podrías traer el admin logueado desde req.user si usás JWT
+//       datosProducto.idAdministrador = 1; // valor temporal o de prueba
+//     }
+
+//     const nuevoProducto = await Producto.create(datosProducto);
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Producto creado correctamente",
+//       data: nuevoProducto,
+//     });
+//   } catch (error) {
+//     console.error("Error al crear producto:", error);
+//     res.status(500).json({ success: false, error: "Error al crear producto" });
+//   }
+// };
+
+//PUT - updateProducto con thumbnail y borrado de imágenes anteriores (asincrónico)
 export const updateProducto = async (req, res) => {
   try {
     const producto = await Producto.findByPk(req.params.id);
     if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
 
-    await producto.update(req.body);
-    res.json(producto);
+    const nuevosDatos = req.body;
+
+    if (req.file) {
+      const imagenPath = req.file.path;
+      const thumbsDir = path.join("uploads/productos/thumbs");
+
+      // Crear carpeta thumbs si no existe
+      try {
+        await fs.access(thumbsDir);
+      } catch {
+        await fs.mkdir(thumbsDir, { recursive: true });
+      }
+
+      const thumbPath = path.join(thumbsDir, req.file.filename);
+
+      await sharp(imagenPath).resize(200).toFile(thumbPath);
+
+      // Borrar imagen anterior si existía
+      if (producto.imagenUrl) {
+        const oldImagenPath = path.join(".", producto.imagenUrl);
+        try {
+          await fs.unlink(oldImagenPath);
+          console.log("Imagen anterior eliminada:", oldImagenPath);
+        } catch {
+          console.warn("No se pudo eliminar la imagen anterior:", oldImagenPath);
+        }
+      }
+
+      if (producto.thumbnailUrl) {
+        const oldThumbPath = path.join(".", producto.thumbnailUrl);
+        try {
+          await fs.unlink(oldThumbPath);
+          console.log("Thumbnail anterior eliminado:", oldThumbPath);
+        } catch {
+          console.warn("No se pudo eliminar el thumbnail anterior:", oldThumbPath);
+        }
+      }
+
+      nuevosDatos.imagenUrl = `/uploads/productos/${req.file.filename}`;
+      nuevosDatos.thumbnailUrl = `/uploads/productos/thumbs/${req.file.filename}`;
+    }
+
+    await producto.update(nuevosDatos);
+
+    res.json({
+      success: true,
+      message: "Producto actualizado correctamente",
+      data: producto,
+    });
   } catch (error) {
     console.error("Error al actualizar producto:", error);
-    res.status(500).json({ error: "Error al actualizar producto" });
+    res.status(500).json({ success: false, error: "Error al actualizar producto" });
   }
 };
+
+// // PUT actualizar producto
+// export const updateProducto = async (req, res) => {
+//   try {
+//     const producto = await Producto.findByPk(req.params.id);
+//     if (!producto) {
+//       return res.status(404).json({ error: "Producto no encontrado" });
+//     }
+
+//     const nuevosDatos = req.body;
+
+//     // 🟡 Si se subió una nueva imagen
+//     if (req.file) {
+//       const imagenAnterior = producto.imagenUrl
+//         ? path.join("uploads", producto.imagenUrl.split("/uploads/")[1])
+//         : null;
+
+//       // ✅ Intentar eliminar la imagen anterior (si existe)
+//       if (imagenAnterior) {
+//         try {
+//           await fs.unlink(imagenAnterior);
+//           console.log("Imagen anterior eliminada:", imagenAnterior);
+//         } catch (err) {
+//           console.warn("No se pudo eliminar la imagen anterior:", err.message);
+//         }
+//       }
+
+//       // 📸 Guardar la nueva imagen en la DB
+//       nuevosDatos.imagenUrl = `/uploads/productos/${req.file.filename}`;
+//     }
+
+//     // ✏️ Actualizar el producto con los nuevos datos
+//     await producto.update(nuevosDatos);
+
+//     res.json({
+//       success: true,
+//       message: "Producto actualizado correctamente",
+//       data: producto,
+//     });
+//   } catch (error) {
+//     console.error("Error al actualizar producto:", error);
+//     res.status(500).json({
+//       success: false,
+//       error: "Error al actualizar producto",
+//     });
+//   }
+// };
+
 
 // DELETE → baja lógica (activo = false)
 export const adminDeleteProducto = async (req, res) => {
@@ -110,20 +273,6 @@ export const adminDeleteProducto = async (req, res) => {
   } catch (error) {
     console.error("Error al eliminar producto:", error);
     res.status(500).json({ error: "Error al eliminar producto" });
-  }
-};
-
-// PATCH → alternar activo/inactivo
-export const toggleProductoActivo = async (req, res) => {
-  try {
-    const producto = await Producto.findByPk(req.params.id);
-    if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
-
-    await producto.update({ activo: !producto.activo });
-    res.json({ message: "Estado del producto actualizado", producto });
-  } catch (error) {
-    console.error("Error al cambiar estado del producto:", error);
-    res.status(500).json({ error: "Error al cambiar estado del producto" });
   }
 };
 
@@ -143,6 +292,21 @@ export const restoreProducto = async (req, res) => {
     res.status(500).json({ success: false, message: 'No se pudo restaurar el producto' });
   }
 };
+
+// // PATCH → alternar activo/inactivo
+// export const toggleProductoActivo = async (req, res) => {
+//   try {
+//     const producto = await Producto.findByPk(req.params.id);
+//     if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
+
+//     await producto.update({ activo: !producto.activo });
+//     res.json({ message: "Estado del producto actualizado", producto });
+//   } catch (error) {
+//     console.error("Error al cambiar estado del producto:", error);
+//     res.status(500).json({ error: "Error al cambiar estado del producto" });
+//   }
+// };
+
 
 // ==================================================
 // 📌 BLOQUE PÚBLICO (TIENDA ECOMMERCE)
@@ -248,284 +412,5 @@ export const crearResenaPorProducto = async (req, res) => {
 
 
 
-// // GET productos relacionados por categoría
-// export const obtenerProductosRelacionados = async (req, res) => {
-//   try {
-//     const producto = await Producto.findByPk(req.params.id);
-//     if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
 
-//     const relacionados = await Producto.findAll({
-//       where: {
-//         categoria: producto.categoria,
-//         id: { $ne: producto.id },
-//         activo: true
-//       }
-//     });
-
-//     res.json(relacionados);
-//   } catch (error) {
-//     console.error("Error al obtener productos relacionados:", error);
-//     res.status(500).json({ error: "Error al obtener productos relacionados" });
-//   }
-// };
-
-// // GET reseñas de un producto
-// export const obtenerResenasPorProducto = async (req, res) => {
-//   try {
-//     const resenas = await Resena.findAll({
-//       where: { idProducto },
-//       order: [['fechaResena', 'DESC']],
-//     });
-//     res.json(resenas);
-//   } catch (error) {
-//     console.error("Error al obtener reseñas:", error);
-//     res.status(500).json({ error: "Error al obtener reseñas" });
-//   }
-// };
-
-// // POST crear reseña de un producto
-// export const crearResenaPorProducto = async (req, res) => {
-//   try {
-//     const { calificacion, comentario } = req.body;
-//     const { idProducto } = req.params;
-
-//     const nuevaResena = await Resena.create({
-//       calificacion,
-//       comentario,
-//       idProducto 
-//     });
-
-//     res.status(201).json(nuevaResena);
-//   } catch (error) {
-//     console.error("Error al crear reseña:", error);
-//     res.status(500).json({ error: "Error al crear reseña" });
-//   }
-// };
-
-
-
-
-
-
-
-
-// import { Producto, Categoria, VarianteProducto, ImagenProducto, Resena } from '../models/index.js';
-// import { Op } from "sequelize";
-
-// // ===== Obtener todos los productos =====
-// export const getProductos = async (req, res) => {
-//   try {
-//     const { page = 1, limit = 10, categoriaId, activo = true } = req.query;
-//     const offset = (page - 1) * limit;
-
-//     const whereClause = { activo };
-//     if (categoriaId) whereClause.categoriaId = categoriaId;
-
-//     const productos = await Producto.findAndCountAll({
-//       include: [{
-//         model: Categoria,
-//         as: 'categoria',
-//         attributes: ['id', 'nombre', 'descripcion']
-//       }],
-//       limit: parseInt(limit),
-//       offset: parseInt(offset),
-//       order: [['fechaCreacion', 'DESC']]
-//     });
-
-//     res.json({
-//       success: true,
-//       data: productos.rows,
-//       pagination: {
-//         currentPage: parseInt(page),
-//         totalPages: Math.ceil(productos.count / limit),
-//         totalItems: productos.count,
-//         itemsPerPage: parseInt(limit)
-//       }
-//     });
-//   } catch (err) {
-//     console.error('Error en getProductos:', err);
-//     res.status(500).json({
-//       success: false,
-//       message: 'No se pudieron obtener los productos'
-//     });
-//   }
-// };
-
-// //===== Obtener un producto por ID =====
-// export const getProductoById = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const producto = await Producto.findByPk(id, {
-//       include: [{
-//         model: Categoria,
-//         as: 'categoria',
-//         attributes: ['id', 'nombre', 'descripcion']
-//       }]
-//     });
-
-//     if (!producto) return res.status(404).json({ success: false, message: 'Producto no encontrado' });
-
-//     res.json({ success: true, data: producto });
-//   } catch (err) {
-//     console.error('Error en getProducto:', err);
-//     res.status(500).json({
-//       success: false,
-//       message: 'No se pudo obtener el producto'
-//     });
-//   }
-// };
-
-
-// // ===== Crear un producto =====
-// export const createProducto = async (req, res) => {
-//   try {
-//     const { nombre, descripcion, precio, stock, categoriaId } = req.body;
-
-//     const nuevoProducto = await Producto.create({ nombre, descripcion, precio, stock, categoriaId });
-
-//     // Cargar categoría si existe
-//     const productoConCategoria = await Producto.findByPk(nuevoProducto.id, {
-//       include: [{
-//         model: Categoria,
-//         as: 'categoria',
-//         attributes: ['id', 'nombre', 'descripcion']
-//       }]
-//     });
-
-//     res.status(201).json({
-//       success: true,
-//       data: productoConCategoria || nuevoProducto,
-//       message: 'Producto creado exitosamente'
-//     });
-//   } catch (err) {
-//     console.error('Error en createProducto:', err);
-//     res.status(500).json({
-//       success: false,
-//       message: 'No se pudo crear el producto'
-//     });
-//   }
-// };
-
-// // ===== Actualizar un producto =====
-// export const updateProducto = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const producto = await Producto.findByPk(id);
-//     if (!producto) return res.status(404).json({ success: false, message: 'Producto no encontrado' });
-
-//     await producto.update(req.body);
-
-//     res.json({
-//       success: true,
-//       data: producto,
-//       message: 'Producto actualizado exitosamente'
-//     });
-//   } catch (err) {
-//     console.error('Error en updateProducto:', err);
-//     res.status(500).json({
-//       success: false,
-//       message: 'No se pudo actualizar el producto'
-//     });
-//   }
-// };
-
-// // // Eliminar un producto
-// // export const deleteProducto = async (req, res) => {
-// //   try {
-// //     const { id } = req.params;
-// //     const resultado = await Producto.destroy({ where: { id } });
-// //     if (resultado > 0) {
-// //       res.status(200).json({ message: 'Producto eliminado correctamente' });
-// //     } else {
-// //       res.status(404).json({ message: 'Producto no encontrado para eliminar' });
-// //     }
-// //   } catch (error) {
-// //     console.error('Error al eliminar producto:', error);
-// //     res.status(500).json({ message: 'Error al eliminar producto', error: error.message });
-// //   }
-// // };
-
-// // ===== Eliminar un producto (soft delete) =====
-// export const deleteProducto = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const producto = await Producto.findByPk(id);
-//     if (!producto) return res.status(404).json({ success: false, message: 'Producto no encontrado' });
-
-//     await producto.update({ activo: false });
-
-//     res.json({ success: true, message: 'Producto eliminado exitosamente' });
-//   } catch (err) {
-//     console.error('Error en deleteProducto:', err);
-//     res.status(500).json({
-//       success: false,
-//       message: 'No se pudo eliminar el producto'
-//     });
-//   }
-// };
-
-
-
-// // Obtener productos relacionados
-// export const obtenerProductosRelacionados = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-
-//     const productoActual = await Producto.findByPk(id);
-//     if (!productoActual) {
-//       return res.status(404).json({ message: 'Producto no encontrado' });
-//     }
-
-//     const productosRelacionados = await Producto.findAll({
-//       where: {
-//         idCategoria: productoActual.idCategoria,
-//         id: { [Op.ne]: id }, // excluye el producto actual
-//       },
-//       limit: 3,
-//       include: [{ model: Categoria, as: "categoria"}],
-//     });
-
-//     res.status(200).json(productosRelacionados);
-//   } catch (error) {
-//     console.error('Error al obtener productos relacionados', error);
-//     res.status(500).json({message: 'Error al obtener productos relacionados', error: error.message});
-//   }
-// };
-
-// //Obtener Resenas por producto
-// export const obtenerResenasPorProducto = async (req, res) => {
-//   try {
-//     const { idProducto } = req.params;
-//     const resenas = await Resena.findAll({
-//       where: { idProducto },
-//       order: [['fechaResena', 'DESC']],
-//     });
-//     res.status(200).json(resenas);
-//   } catch (error) {
-//     console.error('Error al obtener reseñas del producto', error);
-//     res.status(500).json({ message: 'Error al obtener reseñas del producto', error: error.message });
-//   }
-// };
-
-// //Crear una nueva Resena
-// export const crearResenaPorProducto = async (req, res) => {
-//   try {
-//     console.log("📩 Body recibido:", req.body);
-//     console.log("🛒 Params:", req.params);
-//     const { idProducto }= req.params; // aqui obtenemos el idProducto desde la URL con req.params
-//     const { calificacion, comentario, idUsuario } = req.body;
-//     const nuevaResena = await Resena.create({
-//       idProducto, // declaramos el idProducto más allá q lo obtenemos de la URL(req.params) xq estamos creando una reseña nueva y Sequelize necesita saber qué idProducto asociar a esa reseña. Pero este atributo no se incluye en el JSON del body para hacer POST xq ya lo estamos extrayendo de req.params
-//       calificacion,
-//       comentario,
-//       idUsuario,
-//     });
-
-//     console.log("✅ Respuesta a enviar:", nuevaResena);
-//     res.status(201).json(nuevaResena);
-//   } catch (error) {
-//     console.log('Error al crear reseña', error);
-//     res.status(500).json({ message: 'Error al crear reseña', error: error.message});
-//   }
-// }
 

@@ -28,10 +28,14 @@ const Modal = ({
 
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30 backdrop-blur-sm overflow-y-auto" 
+      // 👆 agregado overflow-y-auto para que todo el modal sea desplazable
       style={{ backgroundColor: showBackdrop ? backdropColor : 'transparent' }}
     >
-      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${width} overflow-hidden relative ${customClass}`}>
+      <div 
+        className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${width} relative flex flex-col max-h-[90vh] ${customClass}`}
+        // 👆 agregado my-10 para que el modal tenga margen arriba/abajo
+      >
         {showCloseButton && (
           <button
             onClick={onClose}
@@ -54,14 +58,14 @@ const Modal = ({
             </svg>
           </button>
         )}
-        
+
         {title && (
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
           </div>
         )}
-        
-        <div className="p-6">{children}</div>
+
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

@@ -70,8 +70,8 @@ export const validateProductoCreate = [
     .notEmpty().withMessage('El nombre es requerido')
     .isLength({ min: 2, max: 100 }).withMessage('El nombre debe tener entre 2 y 100 caracteres'),
   body('precio')
-    .isFloat({ min: 0 }).withMessage('El precio debe ser un número mayor o igual a 0'),
-  body('stock')
+  //   .isFloat({ min: 0 }).withMessage('El precio debe ser un número mayor o igual a 0'),
+  // body('stock')
     .isInt({ min: 0 }).withMessage('El stock debe ser un número entero mayor o igual a 0'),
   body('categoriaId')
     .optional()

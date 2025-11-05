@@ -25,7 +25,7 @@ import blogArticulosRoutes from './blogArticulosRoutes.js';
 import lecturasBlogArticulosRoutes from './lecturasBlogArticulosRoutes.js';
 import resenasRoutes from './resenasRoutes.js';
 import cuponesDescuentosRoutes from './cuponesDescuentosRoutes.js';
-import paisesRoutes from './paisesRoutes.js';
+
 
 
 
@@ -62,10 +62,6 @@ router.use('/blogArticulos', blogArticulosRoutes);
 router.use('/lecturasBlogArticulos', lecturasBlogArticulosRoutes);
 router.use('/resenas', resenasRoutes);
 router.use('/cuponesDescuentos', cuponesDescuentosRoutes);
-router.use('/paises', paisesRoutes);
-
-
-
 
 
 export default router;

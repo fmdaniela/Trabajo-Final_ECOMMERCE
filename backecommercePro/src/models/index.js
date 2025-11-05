@@ -16,7 +16,6 @@ import BlogArticulo from './BlogArticulo.js';
 import LecturaBlogArticulo from './LecturaBlogArticulo.js';
 import Resena from './Resena.js';
 import CuponDescuento from './CuponDescuento.js';
-import Pais from './Pais.js';
 import Usuario from './Usuario.js';
 import Mensaje from './Mensaje.js';
 import ImagenProducto from './ImagenProducto.js';
@@ -188,7 +187,6 @@ export {
   LecturaBlogArticulo,
   Mensaje,
   CuponDescuento,
-  Pais,
   DetalleCarrito,
   DetalleOrden  
   

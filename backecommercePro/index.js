@@ -8,6 +8,7 @@ import routerPrincipal from './src/routes/index.js'; // Rutas principales
 import { notFound, errorHandler } from './src/middleware/errorHandler.js';
 import path from "path";               
 import { fileURLToPath } from "url"
+import chatbotRoutes from "./src/routes/chatbot.Routes.js";
 
 
 //  1. Cargar variables de entorno
@@ -40,8 +41,6 @@ app.use(morgan(process.env.NODE_ENV === 'development' ? "dev" : "combined")); //
 app.use(express.json({ limit: '10mb' })); // convierte el body a JSON
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// //para servir las imágenes públicamente:
-// app.use('/uploads', express.static('uploads'));
 
 // Necesario para construir rutas absolutas correctamente en ESModules:
 const __filename = fileURLToPath(import.meta.url);

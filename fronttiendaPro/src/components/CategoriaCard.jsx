@@ -7,7 +7,7 @@ function CategoriaCard({ categoria, onClick }) {
       <img
         src={categoria.imagenUrl}
         alt={categoria.nombre}
-        className="w-full h-48 object-cover"
+        className="w-full h-53 object-cover"
       />
       <h3 className="p-4 font-medium text-lg">{categoria.nombre}</h3>
     </div>

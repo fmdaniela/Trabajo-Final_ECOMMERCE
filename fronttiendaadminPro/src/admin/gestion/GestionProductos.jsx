@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Search, Filter, Package, RotateCw, BoxIcon } from 'lucide-react';
-import moment from 'moment';
 import productosService from '../../services/productosService';
 import categoriaService from '../../services/categoriaService';
+import imagenService from '../../services/imagenService';
 
 import * as toast from '../../utils/toast';
 
@@ -22,7 +22,8 @@ function GestionProductos() {
     imagenUrl: '',
     activo: true,
     oferta: false,
-    descuento: 0
+    descuento: 0,
+    destacado: false
   });
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,6 +41,8 @@ function GestionProductos() {
   const [editingProducto, setEditingProducto] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [productoToDelete, setProductoToDelete] = useState(null);
+  const [showDeleteImagenConfirm, setShowDeleteImagenConfirm] = useState(false);
+  const [imagenAEliminar, setImagenAEliminar] = useState(null);
   
 
   // --- Debounce de búsqueda ---
@@ -103,20 +106,35 @@ function GestionProductos() {
   const handleInputChange = ({ target: { name, value, type, checked } }) =>
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
 
-  const handleOpenModal = (producto = null) => {
-    setEditingProducto(producto);
-    setFormData({
-      nombre: producto?.nombre || '',
-      descripcion: producto?.descripcion || '',
-      precio: producto?.precio || 0,
-      idCategoria: producto?.idCategoria || '',
-      imagenUrl: producto?.imagenUrl || '',
-      activo: producto?.activo ?? true,
-      oferta: producto?.oferta ?? false,
-      descuento: producto?.descuento ?? 0
-    });
-    setIsModalOpen(true);
-  };
+ const handleOpenModal = async (producto = null) => {
+  setFormData({
+    nombre: producto?.nombre || '',
+    descripcion: producto?.descripcion || '',
+    precio: producto?.precio || 0,
+    idCategoria: producto?.idCategoria || '',
+    imagenUrl: producto?.imagenUrl || '',
+    activo: producto?.activo ?? true,
+    oferta: producto?.oferta ?? false,
+    descuento: producto?.descuento ?? 0,
+    destacado: producto?.destacado ?? false
+  });
+
+  if (producto) {
+    try {
+      // 🔹 Traer imágenes secundarias usando el service
+      const imagenes = await imagenService.getPorProducto(producto.id);
+      setEditingProducto({ ...producto, imagenes });
+    } catch (error) {
+      console.error("Error al cargar imágenes del producto:", error);
+      setEditingProducto(producto); // aunque falle, mostrar modal
+    }
+  } else {
+    setEditingProducto(null);
+  }
+
+  setIsModalOpen(true);
+};
+
 
   const handleCloseModal = () => setIsModalOpen(false);
 
@@ -126,52 +144,74 @@ function GestionProductos() {
     try {
       const token = localStorage.getItem("token");
       const admin = JSON.parse(localStorage.getItem("admin")) || {};
-      
-      let dataToSend;
     
-      // Verificamos si hay una imagen (archivo)
-      if (formData.imagen instanceof File) {
+      let dataToSend;
+      const hasFiles = formData.imagenes && formData.imagenes.length > 0;
+    
+      if (hasFiles) {
+        // Si hay imágenes, usamos FormData
         dataToSend = new FormData();
+      
+        // Campos comunes excepto los que no deben ir
         Object.entries(formData).forEach(([key, value]) => {
-          if (value !== null && value !== undefined) {
+          if (
+            key !== "imagenes" &&
+            key !== "imagenPreviews" &&
+            value !== null &&
+            value !== undefined
+          ) {
             dataToSend.append(key, value);
           }
         });
       
-        // Campos obligatorios si no están
-        if (!formData.actividadDeportiva) dataToSend.append("actividadDeportiva", "General");
-        if (!formData.idAdministrador) dataToSend.append("idAdministrador", admin.id || 1);
+        // Agregar todas las imágenes seleccionadas
+        formData.imagenes.forEach((img) => {
+          dataToSend.append("imagenes", img);
+        });
       
-        // Envío al backend
-        if (editingProducto) {
-          await productosService.update(editingProducto.id, dataToSend, token, true);
-        } else {
-          await productosService.create(dataToSend, token, true);
+        // Si también hay una URL externa, la incluimos
+        if (formData.imagenUrl) {
+          dataToSend.append("imagenUrl", formData.imagenUrl);
         }
+      
+        // Campos obligatorios
+        if (!formData.actividadDeportiva)
+          dataToSend.append("actividadDeportiva", "General");
+        if (!formData.idAdministrador)
+          dataToSend.append("idAdministrador", admin.id || 1);
       } else {
-        // Envío como JSON normal
-        const plainData = {
+        // Sin archivos → enviamos JSON normal
+        dataToSend = {
           ...formData,
           actividadDeportiva: formData.actividadDeportiva || "General",
           idAdministrador: formData.idAdministrador || admin.id || 1,
         };
-      
-        if (editingProducto) {
-          await productosService.update(editingProducto.id, plainData, token);
-        } else {
-          await productosService.create(plainData, token);
-        }
+      }
+    
+      // 🚀 Envío al backend
+      if (editingProducto) {
+        await productosService.update(
+          editingProducto.id,
+          dataToSend,
+          token,
+          hasFiles // <--- solo true si hay archivos reales
+        );
+        toast.success("Producto actualizado exitosamente");
+      } else {
+        await productosService.create(dataToSend, token, hasFiles);
+        toast.success("Producto creado exitosamente");
       }
     
       fetchProductos(); // refresca la lista
       handleCloseModal();
     } catch (error) {
       console.error("Error al guardar producto:", error);
+      toast.error("Error al guardar producto");
     }
   };
 
 
-  // --- Restaurar / Eliminar ---
+// --- Restaurar / Eliminar ---
   const handleRestaurar = async (id) => {
     try {
       const { data } = await productosService.restore(id);
@@ -198,7 +238,37 @@ function GestionProductos() {
   };
   const handleCancelDelete = () => { setShowDeleteConfirm(false); setProductoToDelete(null); };
 
-  const inputClasses = "w-full p-2 border border-blue-600 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-blue-800";
+// --- Handler para eliminar imagen del producto ---
+const handleCancelDeleteImagen = () => {
+  setShowDeleteImagenConfirm(false);
+  setImagenAEliminar(null);
+};
+
+const handleConfirmDeleteImagen = async () => {
+  if (!imagenAEliminar) return;
+
+  try {
+    const token = localStorage.getItem("token");
+    await imagenService.eliminarImagen(imagenAEliminar, token);
+
+    setEditingProducto((prev) => ({
+      ...prev,
+      imagenes: prev.imagenes.filter((img) => img.id !== imagenAEliminar),
+    }));
+
+    toast.success("Imagen eliminada correctamente");
+  } catch (error) {
+    console.error("Error al eliminar imagen:", error);
+    toast.error("No se pudo eliminar la imagen");
+  } finally {
+    setShowDeleteImagenConfirm(false);
+    setImagenAEliminar(null);
+  }
+};
+
+
+
+const inputClasses = "w-full p-2 border border-blue-600 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-blue-800";
 
   // --- Renderizado ---
   return (
@@ -259,78 +329,83 @@ function GestionProductos() {
           <span className="ml-2 text-sm text-gray-100">registros por página</span>
         </div>
 
-        <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
-          <thead className="bg-blue-900">
-            <tr>
-              {['nombre','descripcion','precio','activo','categoria','imagen','updatedAt'].map(field => (
-                <th
-                  key={field}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort(field)}
-                >
-                  <div className="flex items-center">
-                    {field === 'nombre' ? 'Nombre' :
-                     field === 'descripcion' ? 'Descripción' :
-                     field === 'precio' ? 'Precio' :
-                     field === 'activo' ? 'Estado' :
-                     field === 'categoria' ? 'Categoría' :
-                     field === 'imagen' ? 'Imagen' :
-                     'Última Modificación'}
-                    {sortField === field && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />)}
-                  </div>
-                </th>
-              ))}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {loading ? (
-              <RenderSkeletonRows itemsPerPage={itemsPerPage} />
-            ) : (
-              productos.map(p => (
-                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{p.nombre}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{p.descripcion}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">${p.precio}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${p.activo ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
-                      {p.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{p.categoria?.nombre || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
-                    {/* <img src={p.imagenUrl} alt={p.nombre} className="h-12 w-12 object-cover rounded" /> */}
-                    <img
-                      src={p.imagenUrl ? p.imagenUrl.startsWith("http") ? p.imagenUrl
-                            : `http://localhost:3000${p.imagenUrl}`
-                            : "https://via.placeholder.com/300"
-                      }
-                      alt={p.nombre}
-                      className="h-12 w-12 object-cover rounded" 
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{moment(p.updatedAt).format('DD/MM/YYYY HH:mm:ss')}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
-                    {!p.activo ? (
-                      <button onClick={() => handleRestaurar(p.id)} className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 flex items-center gap-1">
-                        <RotateCw className="h-4 w-4" /> Restaurar
+       <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+        <thead className="bg-blue-900">
+          <tr>
+            {['nombre','descripcion','precio','activo','categoria','imagen'].map(field => (
+              <th
+                key={field}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort(field)}
+              >
+                <div className="flex items-center">
+                  {field === 'nombre' ? 'Nombre' :
+                   field === 'descripcion' ? 'Descripción' :
+                   field === 'precio' ? 'Precio' :
+                   field === 'activo' ? 'Estado' :
+                   field === 'categoria' ? 'Categoría' :
+                   'Imagen'}
+                  {sortField === field && (
+                    sortDirection === 'asc'
+                      ? <ChevronUp className="h-4 w-4 ml-1" />
+                      : <ChevronDown className="h-4 w-4 ml-1" />
+                  )}
+                </div>
+              </th>
+            ))}
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">Acciones</th>
+          </tr>
+        </thead>
+          
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+          {loading ? (
+            <RenderSkeletonRows itemsPerPage={itemsPerPage} />
+          ) : (
+            productos.map(p => (
+              <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{p.nombre}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{p.descripcion}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">${p.precio}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${p.activo ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
+                    {p.activo ? 'Activo' : 'Inactivo'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{p.categoria?.nombre || '-'}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+                  <img
+                    src={p.imagenUrl
+                      ? p.imagenUrl.startsWith("http")
+                        ? p.imagenUrl
+                        : `http://localhost:3000${p.imagenUrl}`
+                      : "https://via.placeholder.com/300"
+                    }
+                    alt={p.nombre}
+                    className="h-12 w-12 object-cover rounded"
+                  />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
+                  {!p.activo ? (
+                    <button onClick={() => handleRestaurar(p.id)} className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 flex items-center gap-1">
+                      <RotateCw className="h-4 w-4" /> Restaurar
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={() => handleOpenModal(p)} className="text-blue-700 hover:text-blue-900" title="Editar">
+                        <Edit className="h-5 w-5" />
                       </button>
-                    ) : (
-                      <>
-                        <button onClick={() => handleOpenModal(p)} className="text-blue-700 hover:text-blue-900" title="Editar">
-                          <Edit className="h-5 w-5" />
-                        </button>
-                        <button onClick={() => handleDeleteClick(p)} className="text-red-600 hover:text-red-900" title="Eliminar">
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                      <button onClick={() => handleDeleteClick(p)} className="text-red-600 hover:text-red-900" title="Eliminar">
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
       </div>
 
       <Pagination
@@ -420,64 +495,98 @@ function GestionProductos() {
                 ))}
               </select>
             </div>
-              
+
             {/* Imagen: opción 1 - subir archivo */}
             <div>
-              <label htmlFor="imagen" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="imagenes"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Imagen (archivo)
               </label>
+
               <input
                 type="file"
-                id="imagen"
-                name="imagen"
+                id="imagenes"
+                name="imagenes"
                 accept="image/*"
+                multiple
                 onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    setFormData({ ...formData, imagen: file });
-                    // mostrar vista previa temporal
-                    const previewUrl = URL.createObjectURL(file);
-                    setFormData(prev => ({ ...prev, imagenUrl: previewUrl }));
+                  const files = Array.from(e.target.files);
+                  if (files.length > 0) {
+                    setFormData((prev) => ({
+                      ...prev,  
+                      imagenes: files,
+                      imagenPreviews: files.map((file) => URL.createObjectURL(file)),
+                    }));
+                  } else {
+                    setFormData((prev) => ({ ...prev, imagenes: [], imagenPreviews: [] }));
                   }
                 }}
                 className={inputClasses}
               />
-            </div>
-              
-            {/* Imagen: opción 2 - URL externa */}
-            <div>
-              <label htmlFor="imagenUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                URL de Imagen (opcional)
-              </label>
-              <input
-                type="text"
-                id="imagenUrl"
-                name="imagenUrl"
-                value={formData.imagenUrl}
-                onChange={handleInputChange}
-                className={inputClasses}
-              />
-            </div>
-              
-            {/* Vista previa */}
-            {formData.imagenUrl && (
-              <div className="mt-3">
-                <p className="text-xs text-gray-500 mb-1">Vista previa:</p>
-                <img
-                  src={
-                    formData.imagenUrl.startsWith('http')
-                      ? formData.imagenUrl
-                      : formData.imagenUrl.startsWith('blob:')
-                      ? formData.imagenUrl // imagen temporal desde file input
-                      : `http://localhost:3000${formData.imagenUrl}`
-                  }
-                  alt="Vista previa"
-                  className="h-32 w-auto object-cover rounded border"
-                />
-              </div>
-            )}
 
-            {/* Checkboxes */}
+            {/* Vista previa limpia */}
+            <div className="mt-3">
+              <p className="text-xs text-gray-500 mb-1">Vista previa:</p>
+
+              <div className="flex flex-wrap gap-2 justify-start items-start">
+                {/* Imagen principal existente */}
+                {editingProducto?.imagenUrl && (
+                  <div className="relative">
+                    <img
+                      src={`http://localhost:3000${editingProducto.imagenUrl}`}
+                      alt="Principal"
+                      className="h-24 w-24 object-cover rounded border"
+                    />
+                    <p className="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1 rounded">
+                      Principal
+                    </p>
+                  </div>
+                )}
+
+                {/* Otras imágenes guardadas (sin duplicar la principal) */}
+                {editingProducto?.imagenes?.map((img) => (
+                  <div key={img.id} className="relative">
+                    <img
+                      src={`http://localhost:3000${img.urlImagen}`}
+                      alt={`Imagen ${img.id}`}
+                      className="h-24 w-24 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagenAEliminar(img.id);
+                        setShowDeleteImagenConfirm(true);
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                    >
+                      ✕
+                    </button>
+
+                    {img.urlImagen === editingProducto.imagenUrl && (
+                      <p className="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1 rounded">
+                        Principal
+                      </p>
+                    )}
+                  </div>
+                ))}
+
+                {/* Previews de archivos recién seleccionados */}
+                {formData.imagenPreviews?.map((src, i) => (
+                  <div key={`preview-${i}`} className="relative">
+                    <img
+                      src={src}
+                      alt={`Preview ${i + 1}`}
+                      className="h-24 w-24 object-cover rounded border"
+                    />
+                  </div>
+                ))} 
+              </div>
+            </div>
+          </div>
+
+           {/* Checkboxes */}
             <div className="flex items-center space-x-4">
               <div>
                 <input
@@ -505,6 +614,20 @@ function GestionProductos() {
                   En Oferta
                 </label>
               </div>
+              <div>
+                <input
+                  type="checkbox"
+                  id="destacado"
+                  name="destacado"
+                  checked={formData.destacado}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="destacado" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Producto destacado
+                </label>
+              </div>
+
             </div>
           
             {/* Descuento */}
@@ -558,6 +681,21 @@ function GestionProductos() {
           confirmClass="bg-red-500 hover:bg-red-600 text-white"
         >
           ¿Estás seguro de eliminar este producto?
+        </ConfirmationDialog>
+      )}
+      
+      {/* Confirmación eliminación de imagen */}
+      {showDeleteImagenConfirm && (
+        <ConfirmationDialog
+          isOpen={showDeleteImagenConfirm}
+          onClose={handleCancelDeleteImagen}
+          title="Confirmar Eliminación"
+          onConfirm={handleConfirmDeleteImagen}
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          confirmClass="bg-red-500 hover:bg-red-600 text-white"
+        >
+          ¿Estás seguro de eliminar esta imagen?
         </ConfirmationDialog>
       )}
     </div>

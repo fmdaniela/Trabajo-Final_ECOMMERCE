@@ -1,6 +1,11 @@
 import ImagenProducto from '../models/ImagenProducto.js';
 import Producto from '../models/Producto.js'
+import fs from 'fs/promises';
+import path from 'path';
 
+// ==================================================
+// 📌 BLOQUE PÚBLICO (TIENDA ECOMMERCE)
+// ==================================================
 
 // Obtener todas las imágenes de un producto
 export const obtenerImagenesPorProducto = async (req, res) => {
@@ -45,4 +50,45 @@ export const agregarImagenPorProducto = async (req, res) => {
       console.error('Error al agregar imagen:', error);
       res.status(500).json({message: 'Error al agregar imagen', error: error.message});
     }
-};  
+}; 
+
+// ==================================================
+// 📌 BLOQUE PRIVADO (PANEL ADMIN)
+// ==================================================
+
+// Eliminar una imagen de producto
+export const eliminarImagen = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Buscar imagen secundaria en la DB
+    const imagen = await ImagenProducto.findByPk(id);
+    if (!imagen) {
+      return res.status(404).json({ message: 'Imagen no encontrada' });
+    }
+
+    // Eliminar registro de la DB primero
+    await imagen.destroy();
+
+    // Luego intentar eliminar archivo físico (si es local y no URL externa)
+    if (imagen.urlImagen && !imagen.urlImagen.startsWith('http')) {
+      const filePath = path.join(process.cwd(), imagen.urlImagen);
+      fs.unlink(filePath).catch(err => {
+        console.warn('No se pudo borrar el archivo físico:', err.message);
+      });
+    }
+
+    if (imagen.thumbnailUrl && !imagen.thumbnailUrl.startsWith('http')) {
+      const thumbPath = path.join(process.cwd(), imagen.thumbnailUrl);
+      fs.unlink(thumbPath).catch(err => {
+        console.warn('No se pudo borrar la miniatura:', err.message);
+      });
+    }
+
+    res.json({ message: 'Imagen secundaria eliminada correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar imagen secundaria:', error);
+    res.status(500).json({ message: 'Error al eliminar imagen', error: error.message });
+  }
+};
+

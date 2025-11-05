@@ -19,7 +19,7 @@ const Sidebar = ({ isOpen, toggleMenu }) => {
 
   const handleLogoutConfirm = () => {
     console.log("[Sidebar] Confirmación de logout manual");
-    logout(); // 👈 sin parámetro = logout manual
+    logout(); // sin parámetro = logout manual
     setShowLogoutModal(false);
     toggleMenu();
   };

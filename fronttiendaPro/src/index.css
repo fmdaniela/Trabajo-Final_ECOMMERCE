@@ -7,9 +7,28 @@
   100% { opacity: 0; transform: translateY(-10px); }
 }
 
-.animate-fade-in-out {
-  animation: fadeInOut 3s ease-in-out forwards;
+/* oculta scrollbar visualmente */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* opcional: más suave para botones */
+.carousel-button { transition: transform .15s ease; }
+.carousel-button:hover { transform: translateY(-2px); }
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
+
+.animate-marquee {
+  display: inline-flex;
+  animation: marquee 25s linear infinite;
+}
+
 
 
 

@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import Usuario from '../models/Usuario.js';
 import Administrador from '../models/Administrador.js';
 import Rol from '../models/Rol.js';
-import transporter from '../config/mailer.js'; // 👈 Importamos el mailer
+import transporter from '../config/mailer.js'; // Importamos el mailer
 
 // ===== REGISTRO PÚBLICO (solo usuarios) =====
 export const registerUsuario = async (req, res) => {
@@ -21,28 +21,31 @@ export const registerUsuario = async (req, res) => {
       activo: true
     });
 
-    // 2️⃣ Enviar mail al admin avisando del nuevo registro
-    await transporter.sendMail({
+    // 👇 Log para verificar que realmente se guardó en la BD
+    console.log('✅ Usuario creado:', nuevoUsuario.toJSON());
+
+    // 2️⃣ Responder al frontend inmediatamente
+    res.status(201).json({
+      success: true,
+      message: 'Usuario registrado. Te enviamos un mail de bienvenida.',
+      data: { id: nuevoUsuario.id, email: nuevoUsuario.email }
+    });
+
+    // 3️⃣ Enviar mails en background (sin await)
+    transporter.sendMail({
       from: `"Vitalia Notificaciones" <${process.env.EMAIL_USER}>`,
       to: process.env.ADMIN_EMAIL,
       subject: 'Nuevo usuario registrado',
       text: `Se registró un nuevo usuario:\n\nNombre: ${nombre} ${apellido}\nEmail: ${email}`
-    });
+    }).catch(err => console.error('Error mail admin:', err));
 
-    // 3️⃣ Enviar mail de bienvenida al nuevo usuario
-    await transporter.sendMail({
+    transporter.sendMail({
       from: `"Tienda Vitalia" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: '¡Bienvenido a nuestra tienda!',
       text: `Hola ${nombre}, gracias por registrarte en nuestra tienda. ¡Esperamos que disfrutes tu experiencia!`
-    });
+    }).catch(err => console.error('Error mail usuario:', err));
 
-    // 4️⃣ Responder al front
-    res.status(201).json({
-      success: true,
-      message: 'Usuario registrado y correos enviados exitosamente',
-      data: { id: nuevoUsuario.id, email: nuevoUsuario.email }
-    });
   } catch (err) {
     console.error('❌ Error al registrar usuario o enviar correo:', err);
     res.status(500).json({
@@ -188,6 +191,7 @@ export const loginSocial = async (req, res) => {
 export const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     const admin = await Administrador.findOne({
       where: { email },
       include: { model: Rol, as: 'rol', attributes: ['codigo'] }
@@ -197,7 +201,8 @@ export const loginAdmin = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
     }
 
-    const isMatch = await bcrypt.compare(password, admin.password);
+    // Usamos el método del modelo
+    const isMatch = await admin.validPassword(password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
     }
@@ -224,6 +229,47 @@ export const loginAdmin = async (req, res) => {
   }
 };
 
+
+// // ===== LOGIN ADMINISTRADORES (panel admin) =====
+// export const loginAdmin = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+//     const admin = await Administrador.findOne({
+//       where: { email },
+//       include: { model: Rol, as: 'rol', attributes: ['codigo'] }
+//     });
+
+//     if (!admin) {
+//       return res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
+//     }
+
+//     const isMatch = await bcrypt.compare(password, admin.password);
+//     if (!isMatch) {
+//       return res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
+//     }
+
+//     const tokens = generateTokens(admin, 'ADMINISTRADOR');
+
+//     res.json({
+//       success: true,
+//       message: 'Inicio de sesión administrador exitoso',
+//       data: {
+//         ...tokens,
+//         user: {
+//           id: admin.id,
+//           email: admin.email,
+//           nombre: admin.nombre,
+//           rol: admin.rol.codigo,
+//           tipo: 'ADMINISTRADOR'
+//         }
+//       }
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: 'Error en login de administrador', error: err.message });
+//   }
+// };
+
 // ===== GENERAR TOKENS =====
 const generateTokens = (entidad, tipo) => {
   const payload = {
@@ -233,8 +279,8 @@ const generateTokens = (entidad, tipo) => {
     tipo
   };
 
-  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '35s' });
-  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '1m' });
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
+  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
   return { accessToken, refreshToken };
 };

@@ -34,7 +34,7 @@ const Producto = sequelize.define('Producto', {
   },
   thumbnailUrl: {        
     type: DataTypes.STRING(500),
-    allowNull: true
+    allowNull: false
   },
   oferta: {
     type: DataTypes.BOOLEAN,
@@ -49,6 +49,11 @@ const Producto = sequelize.define('Producto', {
       min: 0,
       max: 100
     }
+  },
+  destacado: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
   },
   activo: {
     type: DataTypes.BOOLEAN,

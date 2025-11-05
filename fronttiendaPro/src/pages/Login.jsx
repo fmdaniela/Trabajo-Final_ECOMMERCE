@@ -1,9 +1,9 @@
-// src/pages/Login.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; // // GoogleLoginButton.jsx
 import authService from "../services/authService";
 import GoogleLoginButton from "../components/auth/GoogleLoginButton";
+
 
 function Login() {
   const { usuario, login } = useAuth();
@@ -13,6 +13,11 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 🔹 Asegura que al entrar se vea desde arriba
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Función para login con email/password
   const handleSubmit = async (e) => {
@@ -54,7 +59,7 @@ function Login() {
   return (
     <div className="max-w-md mx-auto mt-10 p-6 border rounded-lg shadow-md">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-semibold mb-4 text-pink-600">Iniciar Sesión</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-pink-600">Ingresar a mi cuenta</h2>
         <p className="text-gray-600">Accede a tu cuenta Vitalia</p>
       </div>
 

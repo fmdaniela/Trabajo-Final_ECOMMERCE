@@ -17,6 +17,7 @@ import {
   obtenerProductosRelacionados,
   obtenerResenasPorProducto,
   crearResenaPorProducto,
+  getProductosDestacados
 } from "../controllers/productos.Controller.js";
 
 import { getVariantesPorProducto } from "../controllers/variantesPoductosController.js";
@@ -58,7 +59,7 @@ router.get("/admin/:id", validateIdParam("id"), handleValidationErrors, adminGet
 // POST /api/productos - Crear producto con imagen
 router.post(
   "/",
-  upload.single("imagen"),
+  upload.array("imagenes", 5),
   validateProductoCreate,
   handleValidationErrors,
   createProducto
@@ -67,7 +68,7 @@ router.post(
 // PUT /api/productos/:id - Actualizar producto con imagen
 router.put(
   "/:id",
-  upload.single("imagen"),
+  upload.array("imagenes", 5),
   validateIdParam("id"),
   validateProductoUpdate,
   handleValidationErrors,
@@ -93,6 +94,9 @@ router.post("/:idProducto/etiquetas", validateIdParam("idProducto"), handleValid
 
 // GET /api/productos - Listar productos activos
 router.get("/", getProductos);
+
+// GET /api/productos/destacados - Listar productos destacados (activos)
+router.get("/destacados", getProductosDestacados);  
 
 // GET /api/productos/:id - Obtener por ID (si está activo)
 router.get("/:id", validateIdParam("id"), handleValidationErrors, getProductoById);

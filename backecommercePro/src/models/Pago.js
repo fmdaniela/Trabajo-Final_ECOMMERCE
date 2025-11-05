@@ -44,7 +44,7 @@ const Pago = sequelize.define('Pago', {
 export default Pago;
 
 /*
-📌 ¿Por qué va unique: true?
+¿Por qué va unique: true?
 Cuando definís una relación 1:1, tenés que asegurarte de que ninguna de las dos entidades se repita en el otro lado.
 
 En este caso:

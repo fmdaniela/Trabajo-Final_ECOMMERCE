@@ -1,4 +1,4 @@
-import { Producto, Categoria, Resena } from '../models/index.js';
+import { Producto, Categoria, Resena, ImagenProducto  } from '../models/index.js';
 import { Op } from "sequelize";
 import fs from "fs/promises"; 
 import path from "path";
@@ -68,7 +68,12 @@ export const adminGetProductos = async (req, res) => {
 // GET producto por id (incluye inactivos)
 export const adminGetProductoById = async (req, res) => {
   try {
-    const producto = await Producto.findByPk(req.params.id);
+    const producto = await Producto.findByPk(req.params.id, {
+      include: [
+        { model: ImagenProducto, as: "imagenes" } // traemos todas las imágenes secundarias
+      ],
+    });
+
     if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
     res.json(producto);
   } catch (error) {
@@ -77,189 +82,167 @@ export const adminGetProductoById = async (req, res) => {
   }
 };
 
-//POST - createProducto con thumbnails (asincrónico)
+
+// ======================
+// CREAR PRODUCTO
+// ======================
 export const createProducto = async (req, res) => {
   try {
     const datosProducto = req.body;
 
-    if (req.file) {
-      const imagenPath = req.file.path;
-      const thumbsDir = path.join("uploads/productos/thumbs");
-
-      // Crear carpeta thumbs si no existe
-      try {
-        await fs.access(thumbsDir);
-      } catch {
-        await fs.mkdir(thumbsDir, { recursive: true });
-      }
-
-      const thumbPath = path.join(thumbsDir, req.file.filename);
-
-      // Generar thumbnail
-      await sharp(imagenPath).resize(200).toFile(thumbPath);
-
-      // Guardar rutas en la DB
-      datosProducto.imagenUrl = `/uploads/productos/${req.file.filename}`;
-      datosProducto.thumbnailUrl = `/uploads/productos/thumbs/${req.file.filename}`;
+    // 🟡 Convertir 'destacado' a boolean si viene del formulario
+    if (datosProducto.destacado !== undefined) {
+      datosProducto.destacado =
+        datosProducto.destacado === "true" || datosProducto.destacado === true;
     }
 
-    if (!datosProducto.actividadDeportiva) datosProducto.actividadDeportiva = "General";
+    // 🔸 Directorio para miniaturas
+    const thumbsDir = path.join("uploads", "productos", "thumbs");
+    try {
+      await fs.access(thumbsDir);
+    } catch {
+      await fs.mkdir(thumbsDir, { recursive: true });
+    }
+
+    // 🟩 Si se subieron imágenes
+    if (req.files && req.files.length > 0) {
+      // Usamos la primera como imagen principal
+      const filePrincipal = req.files[0];
+      const thumbPathPrincipal = path.join(thumbsDir, filePrincipal.filename);
+
+      await sharp(filePrincipal.path).resize(200).toFile(thumbPathPrincipal);
+
+      datosProducto.imagenUrl = `/uploads/productos/${filePrincipal.filename}`;
+      datosProducto.thumbnailUrl = `/uploads/productos/thumbs/${filePrincipal.filename}`;
+    }
+
+    // 🟩 Valores por defecto
+    if (!datosProducto.actividadDeportiva)
+      datosProducto.actividadDeportiva = "General";
     if (!datosProducto.idAdministrador) datosProducto.idAdministrador = 1;
 
+    // 🟩 Crear producto
     const nuevoProducto = await Producto.create(datosProducto);
+
+    // 🟩 Procesar imágenes adicionales (si hay más de una)
+    if (req.files && req.files.length > 1) {
+      const imagenesExtras = req.files.slice(1); // todas menos la primera
+
+      for (const file of imagenesExtras) {
+        const thumbPath = path.join(thumbsDir, file.filename);
+        await sharp(file.path).resize(200).toFile(thumbPath);
+
+        await ImagenProducto.create({
+          idProducto: nuevoProducto.id,
+          urlImagen: `/uploads/productos/${file.filename}`,
+          thumbnailUrl: `/uploads/productos/thumbs/${file.filename}`,
+        });
+      }
+    }
 
     res.status(201).json({
       success: true,
-      message: "Producto creado correctamente",
+      message: "✅ Producto creado correctamente",
       data: nuevoProducto,
     });
   } catch (error) {
     console.error("Error al crear producto:", error);
-    res.status(500).json({ success: false, error: "Error al crear producto" });
+    res
+      .status(500)
+      .json({ success: false, error: "Error al crear producto" });
   }
 };
 
 
-// // POST crear producto
-// export const createProducto = async (req, res) => {
-//   try {
-//     const datosProducto = req.body;
 
-//     // Si se subió una imagen, guardamos la ruta relativa en imagenUrl
-//     if (req.file) {
-//       datosProducto.imagenUrl = `/uploads/productos/${req.file.filename}`;
-//     }
-
-//     // Campos obligatorios con valores por defecto si no vienen
-//     if (!datosProducto.actividadDeportiva) {
-//       datosProducto.actividadDeportiva = "General";
-//     }
-
-//     if (!datosProducto.idAdministrador) {
-//       // Podrías traer el admin logueado desde req.user si usás JWT
-//       datosProducto.idAdministrador = 1; // valor temporal o de prueba
-//     }
-
-//     const nuevoProducto = await Producto.create(datosProducto);
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Producto creado correctamente",
-//       data: nuevoProducto,
-//     });
-//   } catch (error) {
-//     console.error("Error al crear producto:", error);
-//     res.status(500).json({ success: false, error: "Error al crear producto" });
-//   }
-// };
-
-//PUT - updateProducto con thumbnail y borrado de imágenes anteriores (asincrónico)
+// ======================
+// ACTUALIZAR PRODUCTO
+// ======================
 export const updateProducto = async (req, res) => {
   try {
-    const producto = await Producto.findByPk(req.params.id);
-    if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
+    const producto = await Producto.findByPk(req.params.id, {
+      include: [{ model: ImagenProducto, as: "imagenes" }],
+    });
+
+    if (!producto)
+      return res.status(404).json({ error: "Producto no encontrado" });
 
     const nuevosDatos = req.body;
 
-    if (req.file) {
-      const imagenPath = req.file.path;
-      const thumbsDir = path.join("uploads/productos/thumbs");
-
-      // Crear carpeta thumbs si no existe
-      try {
-        await fs.access(thumbsDir);
-      } catch {
-        await fs.mkdir(thumbsDir, { recursive: true });
-      }
-
-      const thumbPath = path.join(thumbsDir, req.file.filename);
-
-      await sharp(imagenPath).resize(200).toFile(thumbPath);
-
-      // Borrar imagen anterior si existía
-      if (producto.imagenUrl) {
-        const oldImagenPath = path.join(".", producto.imagenUrl);
-        try {
-          await fs.unlink(oldImagenPath);
-          console.log("Imagen anterior eliminada:", oldImagenPath);
-        } catch {
-          console.warn("No se pudo eliminar la imagen anterior:", oldImagenPath);
-        }
-      }
-
-      if (producto.thumbnailUrl) {
-        const oldThumbPath = path.join(".", producto.thumbnailUrl);
-        try {
-          await fs.unlink(oldThumbPath);
-          console.log("Thumbnail anterior eliminado:", oldThumbPath);
-        } catch {
-          console.warn("No se pudo eliminar el thumbnail anterior:", oldThumbPath);
-        }
-      }
-
-      nuevosDatos.imagenUrl = `/uploads/productos/${req.file.filename}`;
-      nuevosDatos.thumbnailUrl = `/uploads/productos/thumbs/${req.file.filename}`;
+    // 🟡 Convertir destacado a boolean
+    if (nuevosDatos.destacado !== undefined) {
+      nuevosDatos.destacado =
+        nuevosDatos.destacado === "true" || nuevosDatos.destacado === true;
     }
 
+    // 🔸 Directorio para miniaturas
+    const thumbsDir = path.join("uploads", "productos", "thumbs");
+    try {
+      await fs.access(thumbsDir);
+    } catch {
+      await fs.mkdir(thumbsDir, { recursive: true });
+    }
+
+    // 🟩 Si llegan nuevas imágenes
+    if (req.files && req.files.length > 0) {
+      // 1️⃣ Reemplazar imagen principal (primera)
+      const filePrincipal = req.files[0];
+      const thumbPathPrincipal = path.join(thumbsDir, filePrincipal.filename);
+      await sharp(filePrincipal.path).resize(200).toFile(thumbPathPrincipal);
+
+      // Eliminar imagen principal anterior
+      if (producto.imagenUrl) {
+        try { await fs.unlink(path.join(".", producto.imagenUrl)); } catch {}
+      }
+      if (producto.thumbnailUrl) {
+        try { await fs.unlink(path.join(".", producto.thumbnailUrl)); } catch {}
+      }
+
+      nuevosDatos.imagenUrl = `/uploads/productos/${filePrincipal.filename}`;
+      nuevosDatos.thumbnailUrl = `/uploads/productos/thumbs/${filePrincipal.filename}`;
+
+      // 2️⃣ Imágenes secundarias (si hay más de 1 archivo)
+      if (req.files.length > 1) {
+        const imagenesExtras = req.files.slice(1);
+
+        // 🔹 Eliminar imágenes secundarias anteriores de DB y disco
+        if (producto.imagenes && producto.imagenes.length > 0) {
+          for (const img of producto.imagenes) {
+            try { await fs.unlink(path.join(".", img.urlImagen)); } catch {}
+            try { await fs.unlink(path.join(".", img.thumbnailUrl)); } catch {}
+          }
+          await ImagenProducto.destroy({ where: { idProducto: producto.id } });
+        }
+
+        // 🔹 Crear nuevas imágenes secundarias
+        for (const file of imagenesExtras) {
+          const thumbPath = path.join(thumbsDir, file.filename);
+          await sharp(file.path).resize(200).toFile(thumbPath);
+
+          await ImagenProducto.create({
+            idProducto: producto.id,
+            urlImagen: `/uploads/productos/${file.filename}`,
+            thumbnailUrl: `/uploads/productos/thumbs/${file.filename}`,
+          });
+        }
+      }
+    }
+
+    // 🔹 Actualizar datos del producto
     await producto.update(nuevosDatos);
 
     res.json({
       success: true,
-      message: "Producto actualizado correctamente",
+      message: "✅ Producto actualizado correctamente",
       data: producto,
     });
   } catch (error) {
     console.error("Error al actualizar producto:", error);
-    res.status(500).json({ success: false, error: "Error al actualizar producto" });
+    res
+      .status(500)
+      .json({ success: false, error: "Error al actualizar producto" });
   }
 };
-
-// // PUT actualizar producto
-// export const updateProducto = async (req, res) => {
-//   try {
-//     const producto = await Producto.findByPk(req.params.id);
-//     if (!producto) {
-//       return res.status(404).json({ error: "Producto no encontrado" });
-//     }
-
-//     const nuevosDatos = req.body;
-
-//     // 🟡 Si se subió una nueva imagen
-//     if (req.file) {
-//       const imagenAnterior = producto.imagenUrl
-//         ? path.join("uploads", producto.imagenUrl.split("/uploads/")[1])
-//         : null;
-
-//       // ✅ Intentar eliminar la imagen anterior (si existe)
-//       if (imagenAnterior) {
-//         try {
-//           await fs.unlink(imagenAnterior);
-//           console.log("Imagen anterior eliminada:", imagenAnterior);
-//         } catch (err) {
-//           console.warn("No se pudo eliminar la imagen anterior:", err.message);
-//         }
-//       }
-
-//       // 📸 Guardar la nueva imagen en la DB
-//       nuevosDatos.imagenUrl = `/uploads/productos/${req.file.filename}`;
-//     }
-
-//     // ✏️ Actualizar el producto con los nuevos datos
-//     await producto.update(nuevosDatos);
-
-//     res.json({
-//       success: true,
-//       message: "Producto actualizado correctamente",
-//       data: producto,
-//     });
-//   } catch (error) {
-//     console.error("Error al actualizar producto:", error);
-//     res.status(500).json({
-//       success: false,
-//       error: "Error al actualizar producto",
-//     });
-//   }
-// };
 
 
 // DELETE → baja lógica (activo = false)
@@ -312,16 +295,92 @@ export const restoreProducto = async (req, res) => {
 // 📌 BLOQUE PÚBLICO (TIENDA ECOMMERCE)
 // ==================================================
 
-// GET productos activos
+// GET productos activos con filtros + paginación
 export const getProductos = async (req, res) => {
   try {
-    const productos = await Producto.findAll({ where: { activo: true } });
-    res.json(productos);
+    // 🔹 Query params desde el frontend
+    const {
+      page = 1,
+      limit = 12,
+      categoria,
+      busqueda,
+      orden
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+
+    // 🔹 Filtro base (solo productos activos)
+    const whereClause = { activo: true };
+
+    // 🔹 Filtrar por categoría (nombre, no id)
+    if (categoria) {
+      const categoriaEncontrada = await Categoria.findOne({
+        where: { nombre: { [Op.like]: categoria } }
+      });
+      if (categoriaEncontrada) {
+        whereClause.idCategoria = categoriaEncontrada.id;
+      } else {
+        // si la categoría no existe, devolvemos vacío
+        return res.json({
+          productos: [],
+          pagination: { currentPage: 1, totalPages: 0, totalItems: 0 }
+        });
+      }
+    }
+
+    // 🔹 Filtro por búsqueda (nombre del producto)
+    if (busqueda) {
+      whereClause.nombre = { [Op.like]: `%${busqueda}%` };
+    }
+
+    // 🔹 Ordenar resultados
+    let order = [];
+    if (orden === "menor_precio") order = [["precio", "ASC"]];
+    else if (orden === "mayor_precio") order = [["precio", "DESC"]];
+    else order = [["fechaCreacion", "DESC"]]; // por defecto
+
+    // 🔹 Consultar productos con paginación
+    const productos = await Producto.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: Categoria,
+          as: "categoria",
+          attributes: ["id", "nombre"],
+        },
+      ],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order,
+    });
+
+    // 🔹 Respuesta con datos y paginación
+    res.json({
+      productos: productos.rows,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(productos.count / limit),
+        totalItems: productos.count,
+        itemsPerPage: parseInt(limit),
+      },
+    });
   } catch (error) {
     console.error("Error al obtener productos:", error);
     res.status(500).json({ error: "Error al obtener productos" });
   }
 };
+
+
+// //GET productos activos
+// export const getProductos = async (req, res) => {
+//   try {
+//     const productos = await Producto.findAll({ where: { activo: true } });
+//     res.json(productos);
+//   } catch (error) {
+//     console.error("Error al obtener productos:", error);
+//     res.status(500).json({ error: "Error al obtener productos" });
+//   }
+// };
 
 // GET producto por id (solo si está activo)
 export const getProductoById = async (req, res) => {
@@ -400,6 +459,23 @@ export const crearResenaPorProducto = async (req, res) => {
     res.status(500).json({ message: 'Error al crear reseña', error: error.message});
   }
 }
+
+
+// GET productos destacados (solo activos)
+export const getProductosDestacados = async (req, res) => {
+  try {
+    const productos = await Producto.findAll({
+      where: { activo: true, destacado: true },
+      order: [['fechaCreacion', 'DESC']],
+      limit: 10, // opcional: podés ajustar el límite de productos a mostrar
+    });
+
+    res.status(200).json(productos);
+  } catch (error) {
+    console.error("Error al obtener productos destacados:", error);
+    res.status(500).json({ error: "Error al obtener productos destacados" });
+  }
+};
 
 
 

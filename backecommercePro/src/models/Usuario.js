@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../db/connection.js';
-import Rol from './Rol.js';
 import bcrypt from 'bcryptjs';
 
 const Usuario = sequelize.define('Usuario', {
@@ -24,7 +23,7 @@ const Usuario = sequelize.define('Usuario', {
   },
   password: {
     type: DataTypes.STRING(100),
-    allowNull: true // ✅ CAMBIADO A true PARA AUTH SOCIAL. (porque algunos entran con Google).
+    allowNull: true //  CAMBIADO A true PARA AUTH SOCIAL. (porque algunos entran con Google).
   },
   activo: {
     type: DataTypes.BOOLEAN,

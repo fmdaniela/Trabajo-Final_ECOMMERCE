@@ -32,10 +32,10 @@ function HeroBlock() {
           </ul>
         <div className="text-center md:text-left">    
           <Link
-            to="#"
+            to="/productos"
             className="inline-block bg-[#E91E63] hover:bg-[#d81b60] text-white font-semibold py-3 px-6 rounded-xl transition duration-300 shadow-md"
           >
-            Ver ofertas
+            Ver productos
           </Link>
         </div>
         </div>
@@ -43,7 +43,7 @@ function HeroBlock() {
         {/* Imagen */}
         <div className="flex justify-center">
           <img
-            src="https://images.pexels.com/photos/4056723/pexels-photo-4056723.jpeg?auto=compress&cs=tinysrgb&h=500"
+            src="https://img.freepik.com/fotos-premium/concepto-fitness-estilo-vida-mujer-haciendo-deporte-al-aire-libre-playa_209729-2181.jpg?w=360"
             alt="Hero mujer deportiva"
             className="rounded-3xl object-cover w-full max-w-md h-[360px] shadow-md hover:scale-[1.03] transition-transform duration-300"
           />

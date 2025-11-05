@@ -20,6 +20,8 @@ import {
   handleValidationErrors
 } from '../middleware/validation.js';
 
+import { upload } from "../middleware/uploadMiddleware.js"; 
+
 const router = Router();
 
 // // ================= RUTAS PÚBLICAS =================
@@ -58,8 +60,10 @@ router.get('/public/:id/productos', getProductosByCategoriaPublic); //productos 
 router.get('/', getCategorias);
 router.get('/:id', validateIdParam('id'), handleValidationErrors, getCategoriaById);
 router.get('/:id/productos', validateIdParam('id'), handleValidationErrors, getProductosByCategoria);
-router.post('/', validateCategoriaCreate, handleValidationErrors, createCategoria);
-router.put('/:id', validateIdParam('id'), validateCategoriaUpdate, handleValidationErrors, updateCategoria);
+router.post("/", upload.single("imagen"), validateCategoriaCreate, handleValidationErrors, createCategoria);
+router.put("/:id", upload.single("imagen"), validateIdParam('id'), validateCategoriaUpdate, handleValidationErrors, updateCategoria);
+// router.post('/', validateCategoriaCreate, handleValidationErrors, createCategoria);
+// router.put('/:id', validateIdParam('id'), validateCategoriaUpdate, handleValidationErrors, updateCategoria);
 router.delete('/:id', validateIdParam('id'), handleValidationErrors, deleteCategoria);
 // Ruta para restaurar categoría
 router.patch('/:id/restore', validateIdParam('id'), handleValidationErrors, restoreCategoria);

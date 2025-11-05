@@ -11,8 +11,8 @@ function BannerCarousel() {
   ];
 
   const texts = [
-    'Nueva colección de otoño',
-    'Vitalia, tu look, tu decisión',
+    'Nueva colección Primavera',
+    'Vitalia, ponete en movimiento',
     'Envíos gratis + 3 cuotas sin interés',
   ];
 

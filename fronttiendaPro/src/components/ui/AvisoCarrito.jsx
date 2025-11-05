@@ -6,18 +6,18 @@ export default function AvisoCarrito() {
   if (!productoAgregado) return null;
 
   return (
-    <div className="fixed top-4 right-4 bg-white shadow-lg rounded-lg p-4 border border-gray-200 w-80 z-50 animate-fade-in-out">
+    <div className="fixed top-20 right-4 bg-white shadow-lg rounded-lg p-4 border border-gray-200 w-80 z-50 animate-fade-in-out">
       <h4 className="text-green-600 font-semibold">¡Producto agregado!</h4>
       <div className="flex items-center mt-2">
         <img
-          src={
-            productoAgregado.Producto?.imagenUrl || productoAgregado.imagenUrl
-          }
-          alt={
-            productoAgregado.Producto?.nombre || productoAgregado.nombre
-          }
-          className="w-16 h-16 object-cover rounded mr-3 border"
-        />
+  src={`http://localhost:3000${
+    productoAgregado.Producto?.thumbnailUrl ||
+    productoAgregado.Producto?.imagenUrl ||
+    productoAgregado.imagenUrl
+  }`}
+  alt={productoAgregado.Producto?.nombre || productoAgregado.nombre}
+  className="w-16 h-16 object-cover rounded mr-3 border"
+/>
         <div>
           <p className="font-medium">
             {productoAgregado.Producto?.nombre || productoAgregado.nombre}

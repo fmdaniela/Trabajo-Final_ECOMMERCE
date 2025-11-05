@@ -96,7 +96,7 @@ export const createUsuario = async (req, res) => {
       idRol,
       activo: true
     });
-
+    
     const usuarioCompleto = await Usuario.findByPk(nuevoUsuario.id, {
       include: [{ model: Rol, as: 'rol', attributes: ['id', 'codigo', 'descripcion'] }]
     });

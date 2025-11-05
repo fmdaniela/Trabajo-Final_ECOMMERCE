@@ -9,6 +9,7 @@ import productosRoutes from './productos.Routes.js';
 import carritosRoutes from './carritos.Routes.js';
 import panelAdminRoutes from './panelAdmin.Routes.js'
 import imagenesProductosRoutes from './imagenesProductos.Routes.js';
+import chatbotRoutes from './chatbot.Routes.js';
 
 
 
@@ -45,9 +46,11 @@ router.use('/productos', productosRoutes);
 router.use('/carritos', carritosRoutes);
 router.use('/admin', panelAdminRoutes);
 router.use('/', imagenesProductosRoutes); // Monta sin prefijo imagenesProductos
+// Ruta del chatbot
+router.use('/chat', chatbotRoutes);
 
 
-router.use('/telefonos', telefonosRoutes); // monta las rutas definidas en router. va en plural
+router.use('/telefonos', telefonosRoutes); 
 router.use('/direcciones', direccionesRoutes);
 router.use('/ordenescompras', ordenescomprasRoutes);
 router.use('/pagos', pagosRoutes);
@@ -60,6 +63,7 @@ router.use('/lecturasBlogArticulos', lecturasBlogArticulosRoutes);
 router.use('/resenas', resenasRoutes);
 router.use('/cuponesDescuentos', cuponesDescuentosRoutes);
 router.use('/paises', paisesRoutes);
+
 
 
 

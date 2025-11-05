@@ -1,155 +1,112 @@
-import { StarIcon, HeartIcon, ShoppingCartIcon } from '@heroicons/react/24/solid';
-import { useCarrito } from "../context/CarritoContext";
+import { Link } from "react-router-dom";
+import useCupon from "../hooks/useCupon";
+import { Eye, ShoppingBag  } from "lucide-react";
 
 function ProductCard({ producto }) {
-  const { agregarProducto } = useCarrito(); // ✅ traemos la función del contexto
-
-  const { nombre, imagenUrl, imagen, precio, descuento, destacado } = producto;
+  const { nombre, imagenUrl, imagen, precio, descuento, destacado, oferta } = producto;
+  const { cuponActivo } = useCupon();
 
   const imagenFinal = imagen || imagenUrl;
+  const precioBase = parseFloat(precio) || 0;
 
-  const precioNum = Number(precio);
-  const precioFinal =
-    descuento > 0
-      ? (precioNum * (1 - descuento / 100)).toFixed(2)
-      : precioNum.toFixed(2);
+  // === Variables de cálculo ===
+  let mostrarPrecioFinal = precioBase;
+  let mostrarDescuento = false;
+  let porcentajeAplicado = 0;
+
+  // === Aplica CUPÓN global si existe ===
+  if (cuponActivo?.porcentajeDescuento > 0) {
+    porcentajeAplicado = cuponActivo.porcentajeDescuento;
+    mostrarPrecioFinal = precioBase - (precioBase * porcentajeAplicado) / 100;
+    mostrarDescuento = true;
+  } 
+  // === Si no hay cupón, aplica DESCUENTO propio del producto ===
+  else if (oferta && descuento > 0) {
+    porcentajeAplicado = descuento;
+    mostrarPrecioFinal = precioBase - (precioBase * porcentajeAplicado) / 100;
+    mostrarDescuento = true;
+  }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col">
+    <div className="bg-white w-[96%] rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col">
       <div className="relative">
-        <img
-          src={imagenFinal}
+        <img  
+          src={
+            imagenFinal?.startsWith("http")
+              ? imagenFinal
+              : `http://localhost:3000${imagenFinal}`
+          }
           alt={nombre}
-          className="w-full h-60 object-cover transform hover:scale-105 transition duration-300"
+          className="w-full h-60 object-cover transform hover:scale-110 transition duration-300"
         />
+
+        {/* Badge de destacado */}
         {destacado && (
           <span className="absolute top-2 left-2 bg-emerald-500 text-white text-xs px-2 py-1 rounded-full uppercase font-semibold">
-            {destacado}
+            ⭐ Destacado
           </span>
         )}
-        {descuento > 0 && (
-          <span className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
-            {descuento}% OFF
+
+        {/* Badge de descuento u oferta */}
+        {mostrarDescuento && (
+          <span
+            className={`absolute top-2 right-2 text-white text-xs px-2 py-1 rounded-full font-semibold ${
+              cuponActivo ? "bg-blue-600" : "bg-red-600"
+            }`}
+          >
+            -{porcentajeAplicado}%
           </span>
         )}
-        <button className="absolute bottom-2 right-2 bg-white p-1 rounded-full shadow-md hover:bg-pink-100 cursor-pointer">
-          <HeartIcon className="w-5 h-5 text-pink-300" />
-        </button>
       </div>
 
       <div className="p-4 flex flex-col flex-grow justify-between">
-        <h3 className="font-semibold text-sm text-gray-800 mb-1">{nombre}</h3>
+        {/* Nombre + Iconos */}
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-semibold text-sm text-gray-800">{nombre}</h3>
 
-        <div className="text-pink-600 font-bold text-lg mb-3">${precioFinal}</div>
+          <div className="flex gap-2 items-center">
+            {/* Ver detalle */}
+            <Link
+              to={`/producto/${producto.id}`}
+              className="text-emerald-500 hover:text-emerald-600"
+              title="Ver detalle"
+            >
+              <Eye size={22} />
+            </Link>
 
-        <button
-          onClick={() => agregarProducto(producto.id, 1)}
-          className="flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-[#E91E63] text-sm font-semibold px-4 py-2 rounded cursor-pointer"
-        >
-          <ShoppingCartIcon className="w-5 h-5" />
-          AÑADIR AL CARRITO
-        </button>
+            {/* Ícono de carrito (decorativo / navegación) */}
+            <Link
+              to={`/producto/${producto.id}`}
+              className="text-pink-500 hover:text-pink-600"
+              title="Seleccionar talle y color"
+            >
+              <ShoppingBag  size={20} />
+            </Link>
+          </div>
+        </div>
 
+        {/* Precio */}
+        <div className="text-lg font-bold text-gray-800">
+          {mostrarDescuento ? (
+            <>
+              <span className="line-through text-sm text-gray-400 mr-2">
+                ${precioBase.toFixed(2)}
+              </span>
+              <span
+                className={`font-bold ${
+                  cuponActivo ? "text-blue-600" : "text-green-600"
+                }`}
+              >
+                ${mostrarPrecioFinal.toFixed(2)}
+              </span>
+            </>
+          ) : (
+            <span>${precioBase.toFixed(2)}</span>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 export default ProductCard;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { StarIcon, HeartIcon, ShoppingCartIcon } from '@heroicons/react/24/solid';
-// import { useCarrito } from "../context/CarritoContext";
-
-// function ProductCard({ producto }) {
-//   const { nombre, imagenUrl, imagen, precio, descuento, destacado,} = producto; //Saqué el siguiente atributo:  rating 
-
-//   const imagenFinal = imagen || imagenUrl;
-
-//   const precioNum = Number(precio); //Lo incluimos xq daba error: precio.toFixed is not a function. Esto significa que el campo precio no es un número, y por lo tanto no se puede aplicar toFixed() sobre él. Si producto.precio llega como un string (por ejemplo "12000" en vez de 12000), eso rompe.
-//   const precioFinal = descuento > 0
-//     ? (precioNum * (1 - descuento / 100)).toFixed(2) //antes decia precio y lo cambiamos por precioNum
-//     : precioNum.toFixed(2);
-    
-//   // const ratingNum = Number(rating) || 0; //Asegura que rating sea un número. Si no hay rating, asumimos 0. Lo usamos en el render. Antes decía rating no ratingNum
-
-//   return (
-//     <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col">
-//       <div className="relative">
-//         <img
-//           src={imagenFinal}
-//           alt={nombre}
-//           className="w-full h-60 object-cover transform hover:scale-105 transition duration-300"
-//         />
-//         {destacado && (
-//           <span className="absolute top-2 left-2 bg-emerald-500 text-white text-xs px-2 py-1 rounded-full uppercase font-semibold">
-//             {destacado}
-//           </span>
-//         )}
-//         {descuento > 0 && (
-//           <span className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
-//             {descuento}% OFF
-//           </span>
-//         )}
-//         <button className="absolute bottom-2 right-2 bg-white p-1 rounded-full shadow-md hover:bg-pink-100 cursor-pointer">
-//           <HeartIcon className="w-5 h-5 text-pink-300" />
-//         </button>
-//       </div>
-
-//       <div className="p-4 flex flex-col flex-grow justify-between">
-//         <h3 className="font-semibold text-sm text-gray-800 mb-1">{nombre}</h3>
-        
-//         {/* <div className="flex items-center text-sm text-gray-600 mb-2">
-//           {[...Array(5)].map((_, i) => (
-//             <StarIcon
-//               key={i}
-//               className={`w-4 h-4 mr-1 ${
-//                 i < Math.round(ratingNum) ? 'text-yellow-400' : 'text-gray-300'
-//               }`}
-//             />
-//           ))}
-//           <span className="ml-1 text-xs text-gray-500">({ratingNum})</span>
-//         </div> */}
-
-//         <div className="text-pink-600 font-bold text-lg mb-3">${precioFinal}</div>
-
-//         <button
-//           onClick={() => agregarProducto({ id: producto.id, cantidad: 1 })}
-//           className="flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-[#E91E63] text-sm font-semibold px-4 py-2 rounded cursor-pointer"
-//         >
-//           <ShoppingCartIcon className="w-5 h-5" />
-//           AÑADIR AL CARRITO
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default ProductCard;
-

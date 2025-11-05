@@ -71,7 +71,6 @@ export const getProductosByCategoria = async (req, res) => {
 
     const whereClause = { idCategoria: id };
 
-    // Solo filtra si no es "all"
     if (activa !== undefined && activa !== 'all') whereClause.activa = activa === 'true' ? 1 : 0;
 
     if (search) {
@@ -107,14 +106,18 @@ export const getProductosByCategoria = async (req, res) => {
 // ===== Crear una nueva categoría =====
 export const createCategoria = async (req, res) => {
   try {
-    const { nombre, descripcion, imagenUrl } = req.body;
-    // Valor por defecto si no se envía imagen
-    const url = imagenUrl || "https://via.placeholder.com/150";
+    const { nombre, descripcion } = req.body;
+
+    // Si subieron un archivo, generar URL accesible
+    let imagenUrl = "https://via.placeholder.com/150";
+    if (req.file) {
+      imagenUrl = `${req.protocol}://${req.get('host')}/uploads/categorias/${req.file.filename}`;
+    }
 
     const nuevaCategoria = await Categoria.create({
       nombre,
       descripcion,
-      imagenUrl: url,
+      imagenUrl,
       activa: true
     });
 
@@ -124,36 +127,31 @@ export const createCategoria = async (req, res) => {
       message: "Categoría creada exitosamente"
     });
   } catch (err) {
-    console.error("Error en createCategoria:", err);
-    res.status(500).json({
-      success: false,
-      error: "Error interno del servidor",
-      message: "No se pudo crear la categoría"
-    });
+    console.error(err);
+    res.status(500).json({ success: false, message: "No se pudo crear la categoría" });
   }
 };
+
 
 // ===== Actualizar categoría =====
 export const updateCategoria = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, imagenUrl, activa } = req.body;
+    const { nombre, descripcion, activa } = req.body;
 
     const categoria = await Categoria.findByPk(id);
-    if (!categoria)
-      return res.status(404).json({ success: false, error: "Categoría no encontrada" });
+    if (!categoria) return res.status(404).json({ success: false, message: "Categoría no encontrada" });
 
-    // Forzar boolean, porque puede llegar como string "true"/"false"
-    const activaBoolean = activa === true || activa === 'true';
-
-    // Si no se envía imagen, mantiene la que ya tiene
-    const url = imagenUrl || categoria.imagenUrl;
+    let imagenUrl = categoria.imagenUrl;
+    if (req.file) {
+      imagenUrl = `${req.protocol}://${req.get('host')}/uploads/categorias/${req.file.filename}`;
+    }
 
     await categoria.update({
       nombre,
       descripcion,
-      imagenUrl: url,
-      activa: activaBoolean  // <-- actualizamos activa
+      activa: activa === 'true' || activa === true,
+      imagenUrl
     });
 
     res.json({
@@ -162,15 +160,10 @@ export const updateCategoria = async (req, res) => {
       message: "Categoría actualizada exitosamente"
     });
   } catch (err) {
-    console.error("Error en updateCategoria:", err);
-    res.status(500).json({
-      success: false,
-      error: "Error interno del servidor",
-      message: "No se pudo actualizar la categoría"
-    });
+    console.error(err);
+    res.status(500).json({ success: false, message: "No se pudo actualizar la categoría" });
   }
 };
-
 
 // ===== Soft delete categoría =====
 export const deleteCategoria = async (req, res) => {
@@ -195,7 +188,6 @@ export const restoreCategoria = async (req, res) => {
     if (!categoria)
       return res.status(404).json({ success: false, error: "Categoría no encontrada" });
 
-    // Solo restauramos si estaba inactiva
     if (categoria.activa)
       return res.status(400).json({ success: false, message: "La categoría ya está activa" });
 
@@ -216,7 +208,6 @@ export const restoreCategoria = async (req, res) => {
   }
 };
 
-
 // =============== PÚBLICO ===============
 
 // ===== Obtener categorías activas (público) =====
@@ -225,7 +216,7 @@ export const getCategoriasPublic = async (req, res) => {
     const { page = 1, limit = 10, sort = 'nombre', direction = 'ASC', search } = req.query;
     const offset = (page - 1) * limit;
 
-    const whereClause = { activa: true }; // Solo categorías activas
+    const whereClause = { activa: true }; 
     if (search) {
       whereClause.nombre = { [Op.like]: `%${search}%` };
     }

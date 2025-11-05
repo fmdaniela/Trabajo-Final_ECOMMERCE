@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Search, Filter, Tag, RotateCw } from 'lucide-react';
-import moment from 'moment';
 import categoriaService from '../../services/categoriaService';
 
 import * as toast from '../../utils/toast';
@@ -10,12 +9,10 @@ import Modal from '../../components/Modal';
 import Pagination from '../../components/Paginacion';
 import RenderSkeletonRows from '../../components/RenderSkeletonRows';
 
-
-
 function GestionCategorias() {
   const [categorias, setCategorias] = useState([]);
   const [productosCount, setProductosCount] = useState({});
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '', activa: true });
+  const [formData, setFormData] = useState({ nombre: '', descripcion: '', activa: true, imagenFile: null, imagenUrl: '' });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -23,7 +20,7 @@ function GestionCategorias() {
   const [sortField, setSortField] = useState('nombre');
   const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(3);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -33,7 +30,6 @@ function GestionCategorias() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [categoriaToDelete, setCategoriaToDelete] = useState(null);
 
- 
   // --- Debounce de búsqueda ---
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500);
@@ -92,15 +88,19 @@ function GestionCategorias() {
   };
 
   // --- Formulario ---
-  const handleInputChange = ({ target: { name, value, type, checked } }) =>
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  const handleInputChange = ({ target: { name, value, type, checked, files } }) => {
+    if (name === 'imagen') setFormData(prev => ({ ...prev, imagenFile: files[0] }));
+    else setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
 
   const handleOpenModal = (categoria = null) => {
     setEditingCategoria(categoria);
     setFormData({
       nombre: categoria?.nombre || '',
       descripcion: categoria?.descripcion || '',
-      activa: categoria?.activa ?? true
+      activa: categoria?.activa ?? true,
+      imagenUrl: categoria?.imagenUrl || '',
+      imagenFile: null
     });
     setIsModalOpen(true);
   };
@@ -110,12 +110,17 @@ function GestionCategorias() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const dataToSend = { ...formData };
+      const formPayload = new FormData();
+      formPayload.append('nombre', formData.nombre);
+      formPayload.append('descripcion', formData.descripcion);
+      formPayload.append('activa', formData.activa);
+      if (formData.imagenFile) formPayload.append('imagen', formData.imagenFile);
+
       if (editingCategoria) {
-        await categoriaService.update(editingCategoria.id, dataToSend);
+        await categoriaService.update(editingCategoria.id, formPayload, true);
         toast.success('Categoría actualizada con éxito');
       } else {
-        await categoriaService.create(dataToSend);
+        await categoriaService.create(formPayload, true);
         toast.success('Categoría creada con éxito');
       }
       handleCloseModal();
@@ -153,11 +158,9 @@ function GestionCategorias() {
   };
   const handleCancelDelete = () => { setShowDeleteConfirm(false); setCategoriaToDelete(null); };
 
-  // Clases comunes Tailwind ajustadas para modal legible
   const inputClasses = "w-full p-2 border border-blue-600 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-blue-800";
   const selectClasses = "pl-10 pr-4 py-2 border border-blue-600 rounded-lg bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-blue-800 appearance-none";
 
-  // --- Renderizado ---
   return (
     <div className="p-6 bg-slate-800 min-h-screen">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -219,7 +222,7 @@ function GestionCategorias() {
         <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
           <thead className="bg-blue-900">
             <tr>
-              {['nombre', 'descripcion', 'activa', 'updatedAt'].map(field => (
+              {['nombre', 'descripcion', 'activa'].map(field => (
                 <th
                   key={field}
                   className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider cursor-pointer"
@@ -228,16 +231,21 @@ function GestionCategorias() {
                   <div className="flex items-center">
                     {field === 'nombre' ? 'Nombre' :
                      field === 'descripcion' ? 'Descripción' :
-                     field === 'activa' ? 'Estado' :
-                     'Última Modificación'}
-                    {sortField === field && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />)}
+                     'Estado'}
+                    {sortField === field && (
+                      sortDirection === 'asc'
+                        ? <ChevronUp className="h-4 w-4 ml-1" />
+                        : <ChevronDown className="h-4 w-4 ml-1" />
+                    )}
                   </div>
                 </th>
               ))}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">Imagen</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">Productos</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
+            
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {loading ? (
               <RenderSkeletonRows itemsPerPage={itemsPerPage} />
@@ -252,7 +260,11 @@ function GestionCategorias() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                    {moment(c.updatedAt).format('DD/MM/YYYY HH:mm:ss')}
+                    {c.imagenUrl ? (
+                      <img src={c.imagenUrl} alt={c.nombre} className="h-10 w-10 object-cover rounded" />
+                    ) : (
+                      <span className="text-gray-400">Sin imagen</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
@@ -302,6 +314,23 @@ function GestionCategorias() {
               <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
               <textarea id="descripcion" name="descripcion" value={formData.descripcion} onChange={handleInputChange} rows="3" className={inputClasses} />
             </div>
+            <div>
+              <label htmlFor="imagen" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Imagen</label>
+              <input 
+                type="file" 
+                id="imagen" 
+                name="imagen" 
+                accept="image/*" 
+                onChange={handleInputChange} 
+                className={inputClasses} 
+              />
+              {formData.imagenUrl && !formData.imagenFile && (
+                <img src={formData.imagenUrl} alt="preview" className="h-16 w-16 mt-2 object-cover rounded" />
+              )}
+              {formData.imagenFile && (
+                <img src={URL.createObjectURL(formData.imagenFile)} alt="preview" className="h-16 w-16 mt-2 object-cover rounded" />
+              )}
+            </div>
             <div className="flex items-center">
               <input type="checkbox" id="activa" name="activa" checked={formData.activa} onChange={handleInputChange} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
               <label htmlFor="activa" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Activo</label>
@@ -338,37 +367,3 @@ function GestionCategorias() {
 }
 
 export default GestionCategorias;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

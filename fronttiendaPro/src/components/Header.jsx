@@ -16,12 +16,12 @@ function Header() {
   
 
   const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Productos', path: '/productos' },
-    { name: 'Categorias', path: '/categorias' },
-    { name: 'Bienestar', path: '/bienestar' },
-    { name: 'Sobre Nosotras', path: '/sobrenosotras' },
-    { name: 'Contacto', path: '/contacto' },
+    { name: 'HOME', path: '/' },
+    { name: 'PRODUCTOS', path: '/productos' },
+    // { name: 'CATEGORIAS', path: '/categorias' },
+    // { name: 'Bienestar', path: '/bienestar' },
+    { name: 'SOBRE NOSOTRAS', path: '/sobrenosotras' },
+    { name: 'CONTACTO', path: '/contacto' },
   ];
 
   const handleLogoutConfirm = () => {
@@ -78,9 +78,29 @@ function Header() {
               </button>
             </div>
           ) : (
-            <Link to="/login">
+            // <Link to="/login">
+            //   <UserIcon className="w-6 h-6 text-white hover:text-gray-200 cursor-pointer" />
+            // </Link>
+
+            <div className="relative group">
               <UserIcon className="w-6 h-6 text-white hover:text-gray-200 cursor-pointer" />
-            </Link>
+
+              {/* Menú desplegable */}
+              <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <Link
+                  to="/login"
+                  className="block px-4 py-2 text-gray-700 hover:bg-pink-50 hover:text-pink-600"
+                >
+                  Iniciar sesión
+                </Link>
+                <Link
+                  to="/register"
+                  className="block px-4 py-2 text-gray-700 hover:bg-pink-50 hover:text-pink-600"
+                >
+                  Registrarme
+                </Link>
+              </div>
+            </div>
           )}
 
           <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
@@ -174,134 +194,3 @@ function Header() {
 
 export default Header;
 
-
-
-
-
-
-
-
-
-// import { useState } from 'react';
-// import { Link, useLocation } from 'react-router-dom';
-// import { ShoppingCartIcon, UserIcon } from '@heroicons/react/24/solid';
-// import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-// import useAuth from "../hooks/useAuth";
-
-// function Header() {
-//   const [menuOpen, setMenuOpen] = useState(false);
-//   const location = useLocation();
-//   const { usuario, logout } = useAuth();
-
-//   const navLinks = [
-//     { name: 'Home', path: '/' },
-//     { name: 'Productos', path: '/productos' },
-//     { name: 'Categorias', path: '/categorias' },
-//     { name: 'Bienestar', path: '/bienestar' },
-//     { name: 'Sobre Nosotras', path: '/sobrenosotras' },
-//     { name: 'Contacto', path: '/contacto' },
-//   ];
-
-//   return (
-//     <nav className="fixed top-0 left-0 w-full z-50 bg-[#E91E63] shadow-2xs px-4 py-4 flex items-center justify-between">
-      
-//       {/* Logo + links desktop */}
-//       <div className="flex items-center space-x-6">
-//         <Link to="/" className="text-2xl font-bold text-white">Vitalia</Link>
-
-//         <ul className="hidden md:flex space-x-6 text-white font-medium">
-//           {navLinks.map(({ name, path }) => (
-//             <li key={path}>
-//               <Link
-//                 to={path}
-//                 className={`hover:text-gray-200 ${
-//                   location.pathname === path ? 'underline underline-offset-4' : ''
-//                 }`}
-//               >
-//                 {name}
-//               </Link>
-//             </li>
-//           ))}
-//         </ul>
-//       </div>
-
-//       {/* Icons + menú hamburguesa */}
-//       <div className="flex items-center space-x-4">
-//         <div className="relative cursor-pointer">
-//           <ShoppingCartIcon className="w-6 h-6 text-white hover:text-gray-200" />
-//           <span className="absolute -top-2 -right-2 bg-fuchsia-800 text-white text-xs rounded-full px-1">3</span>
-//         </div>
-
-//         {/* Usuario logueado - desktop */}
-//         {usuario ? (
-//           <div className="flex items-center space-x-2 text-white">
-//             <span className="text-sm hidden sm:inline">¡Hola, {usuario.nombre}!</span>
-//             <button
-//               onClick={logout}
-//               className="text-sm hover:text-gray-200 cursor-pointer"
-//             >
-//               Cerrar sesión
-//             </button>
-//           </div>
-//         ) : (
-//           <Link to="/login">
-//             <UserIcon className="w-6 h-6 text-white hover:text-gray-200 cursor-pointer" />
-//           </Link>
-//         )}
-
-//         <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-//           {menuOpen ? (
-//             <XMarkIcon className="w-6 h-6 text-white" />
-//           ) : (
-//             <Bars3Icon className="w-6 h-6 text-white" />
-//           )}
-//         </button>
-//       </div>
-
-//       {/* Menú mobile */}
-//       {menuOpen && (
-//         <ul className="absolute top-full left-0 w-full bg-[#E91E63] shadow-md md:hidden flex flex-col space-y-2 px-6 py-4 text-white font-medium">
-//           {navLinks.map(({ name, path }) => (
-//             <li key={path}>
-//               <Link
-//                 to={path}
-//                 onClick={() => setMenuOpen(false)}
-//                 className={`block hover:text-gray-200 ${
-//                   location.pathname === path ? 'underline underline-offset-4' : ''
-//                 }`}
-//               >
-//                 {name}
-//               </Link>
-//             </li>
-//           ))}
-
-//           {/* Saludo + cerrar sesión o iniciar sesión en mobile */}
-//           {usuario ? (
-//             <div className="flex flex-col space-y-1 mt-4 border-t border-white pt-2">
-//               <span className="text-sm">¡Hola, {usuario.nombre}!</span>
-//               <button
-//                 onClick={() => {
-//                   logout();
-//                   setMenuOpen(false);
-//                 }}
-//                 className="text-sm text-left hover:text-gray-200 cursor-pointer"
-//               >
-//                 Cerrar sesión
-//               </button>
-//             </div>
-//           ) : (
-//             <Link
-//               to="/login"
-//               onClick={() => setMenuOpen(false)}
-//               className="text-sm underline hover:text-gray-200 mt-4"
-//             >
-//               Iniciar sesión
-//             </Link>
-//           )}
-//         </ul>
-//       )}
-//     </nav>
-//   );
-// }
-
-// export default Header;

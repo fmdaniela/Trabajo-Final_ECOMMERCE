@@ -162,7 +162,7 @@ Rol.hasMany(Usuario, { foreignKey: 'idRol', as: 'usuarios' });
 //cada usuario tiene un rol, un rol puede tener muchos usuarios. Esto sirve para manejar permisos.
 
 Administrador.belongsTo(Rol, { foreignKey: 'idRol', as: 'rol' });
-Rol.hasMany(Administrador, { foreignKey: 'idRol', as: 'administrador' });
+Rol.hasMany(Administrador, { foreignKey: 'idRol', as: 'administradores' });
 //cada Administrador tiene un rol, un rol puede tener muchos administradores. Esto sirve para manejar permisos.
 
 

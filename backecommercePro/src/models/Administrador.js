@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../db/connection.js';
+import bcrypt from 'bcryptjs';
 
 const Administrador = sequelize.define('Administrador', {
   id: {
@@ -44,7 +45,28 @@ const Administrador = sequelize.define('Administrador', {
   }
 }, {
   tableName: 'administradores',
-  timestamps: true 
+  timestamps: true,
+  hooks: {
+    beforeCreate: async (admin) => {
+      if (admin.password) {
+        const salt = await bcrypt.genSalt(10);
+        admin.password = await bcrypt.hash(admin.password, salt);
+      }
+    },
+    beforeUpdate: async (admin) => {
+      if (admin.changed('password')) {
+        const salt = await bcrypt.genSalt(10);
+        admin.password = await bcrypt.hash(admin.password, salt);
+      }
+    }
+  }
 });
 
-export default Administrador;
+// Método para comparar contraseñas
+Administrador.prototype.validPassword = async function(password) {
+  if (!this.password) return false;
+  return await bcrypt.compare(password, this.password);
+};
+
+export default Administrador; 
+

@@ -4,15 +4,26 @@ import API from './api';
  * Servicio para gestionar las operaciones relacionadas con productos
  */
 const productosService = {
-  obtenerProductos: async () => {
+  obtenerProductos: async (params = {}) => {
     try {
-      const response = await API.get('/productos'); 
-      return response.data;
+      // params puede incluir: page, limit, categoria, busqueda, orden
+      const response = await API.get('/productos', { params });
+      return response.data; // { productos: [...], pagination: {...} }
     } catch (error) {
-      console.error('Error al obtener las productos:', error);
+      console.error('Error al obtener los productos:', error);
       throw error;
     }
   },
+
+  // obtenerProductos: async () => {
+  //   try {
+  //     const response = await API.get('/productos'); 
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error('Error al obtener las productos:', error);
+  //     throw error;
+  //   }
+  // },
 
   obtenerProductoPorId: async (id) => {
     try {
@@ -60,6 +71,17 @@ const productosService = {
       return response.data;
     } catch (error) {
       console.error('Error al obtener productos relacionados', error);
+      throw error;
+    }
+  },
+
+  // ✅ Nueva función para traer los destacados
+  getDestacados: async () => {
+    try {
+      const response = await API.get('/productos/destacados');
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener productos destacados:', error);
       throw error;
     }
   },
